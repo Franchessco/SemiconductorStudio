@@ -1,0 +1,18 @@
+[submodule "Vendor/implot"]
+	path = Vendor/implot
+	url = https://github.com/ArnoXX/implot.git
+[submodule "Vendor/yaml-cpp"]
+	path = Vendor/yaml-cpp
+	url = https://github.com/ArnoXX/yaml-cpp.git
+[submodule "Vendor/imgui"]
+	path = Vendor/imgui
+	url = https://github.com/ArnoXX/imgui.git
+[submodule "Vendor/NumericStorm"]
+	path = Vendor/NumericStorm
+	url = https://github.com/SirJamesClarkMaxwell/NumericStorm.git
+[submodule "Vendor/LambertW"]
+	path = Vendor/LambertW
+	url = https://github.com/DarkoVeberic/LambertW.git
+[submodule "Vendor/googletest"]
+	path = Vendor/googletest
+	url = https://github.com/ArnoXX/googletest.git
