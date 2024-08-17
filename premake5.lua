@@ -12,8 +12,8 @@ workspace "JunctionFitMaster"
     
 group "JunctionFitMaster"
     include "./JunctionFitMaster"
-    include "./JFMApp"
-    include "./Services"
+    -- include "./JFMApp"
+    include "./JFMServices"
 
 group "Dependencies"
     include "./Vendor/imgui"
