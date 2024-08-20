@@ -14,6 +14,10 @@ project "JunctionFitMaster"
 
     includedirs {
         "%{prj.location}/**",
+        "%{wks.location}/JFMApp",
+        "%{wks.location}/JFMApp/**",
+        "%{wks.location}/JFMServices/**",
+        "%{wks.location}/JFMServices",
         "%{wks.location}/Vendor/imgui",
         "%{wks.location}/Vendor/imgui/backends",
         "%{wks.location}/Vendor/imgui/misc/cpp",
