@@ -1,8 +1,7 @@
-#include <iostream>
-#include "tests.hpp"
+#include "AppRunner.hpp"
 
 int main()
 {
-	std::cout << "I am working!" << std::endl;
-	Tests::test();
-};
+
+	return 0;
+}
