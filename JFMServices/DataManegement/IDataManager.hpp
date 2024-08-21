@@ -24,6 +24,7 @@ namespace JFMService::DataManagementService
     };
     struct LoaderOutput
     {
+
         std::unique_ptr<CharacteristicData> data{nullptr};
         std::unique_ptr<FittingService::MCOutput> mcData{nullptr};
         bool success{};
@@ -31,15 +32,16 @@ namespace JFMService::DataManagementService
 
     class IDataManager
     {
+    public:
         using Callback = std::function<void(LoaderOutput)>;
         using VectorCallback = std::function<void(std::vector<LoaderOutput>)>; // todo change this type to be more suitable
         using path = std::filesystem::path;
 
-                virtual void load(const path &path, const Callback &callback) = 0;
-        virtual void load(const std::vector<path> &paths, const VectorCallback &callback) = 0;
+        virtual void load(const path &path, const Callback &callback) = 0;
+        virtual void load(const std::vector<path> &paths, const VectorCallback &callbacks) = 0;
 
         virtual void save(const path &path, const LoaderOutput &input, const Callback &callback) = 0;
-        virtual void save(const std::vector<path> &paths, const std::vector<LoaderOutput> &input, const VectorCallback &callback) = 0;
+        virtual void save(const std::vector<path> &paths, const std::vector<LoaderOutput> &input, const VectorCallback &callbacks) = 0;
 
         virtual void MoveInto(path &currentPath, const std::string &destination) = 0;
         virtual void MoveBack(path &currentPath) = 0;

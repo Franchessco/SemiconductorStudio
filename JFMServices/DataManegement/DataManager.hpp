@@ -1,23 +1,51 @@
 #pragma once
 #include "pch.hpp"
 #include "utils.hpp"
-#include "concepts.hpp"
-#include "IDataLoader.hpp"
-
+#include "IDataManager.hpp"
+#include "Loader.hpp"
 namespace JFMService
 {
-
+    enum class LoadingTypes
+    {
+        Characteristic = 0,
+        MonteCarloResult
+    };
     class CharacteristicLoader;
+    class DataManager : public DataManagementService::IDataManager
+    {
+        using LoaderOutput = DataManagementService::LoaderOutput;
+
+    public:
+        virtual void load(const path &path, const Callback &callback) override;
+        virtual void load(const std::vector<path> &paths, const VectorCallback &callback) override;
+
+        virtual void save(const path &path, const LoaderOutput &input, const Callback &callback) override;
+        virtual void save(const std::vector<path> &paths, const std::vector<LoaderOutput> &input, const VectorCallback &callback) override;
+
+        virtual void MoveInto(path &currentPath, const std::string &destination) override;
+        virtual void MoveBack(path &currentPath) override;
+
+        virtual std::vector<std::string> GetDirectories(const path &path) override;
+        virtual std::vector<std::string> GetFiles(const path &path) override;
+
+    private:
+        std::unordered_map<LoadingTypes, std::shared_ptr<Loader>> loaders;
+
+    private:
+        LoadingTypes findLoader(const std::filesystem::path &path);
+    };
+    /*
+
     template <class... Types>
-    class DataLoader : public IDataLoader
+    class DataManager : public IDataLoader
     {
     public:
-        DataLoader() = default;
-        DataLoader(Types... args)
+        DataManager() = default;
+        DataManager(Types... args)
             : loaders{std::make_pair(args.getLoaderName(), std::variant<Types...>(args))...} {}
 
-        ~DataLoader() = default;
-        /*
+        ~DataManager() = default;
+
         void load(const std::filesystem::path& path, std::function<void()> callback = nullptr)
         {
             //using ReturnedType = std::variant<Types::ReturiningType...>;
@@ -27,7 +55,7 @@ namespace JFMService
                 using LoaderType = std::decay_t<decltype(loader)>;
                 using ConstructedType = LoaderType::ReturningType;
                 ConstructedType constructed = loadData(loader,path);
-                /*std::visit([&](auto& loader) {
+                std::visit([&](auto& loader) {
 
                     if (loader.checkExtensionCompatibility(path))
                     {
@@ -39,7 +67,7 @@ namespace JFMService
                 callback();
 
         }
-        */
+
 
         void load(const std::filesystem::path &path, std::function<void(LoaderOutput)> callback) override
         {
@@ -75,11 +103,12 @@ namespace JFMService
         template <typename T>
         T &get_by_type() { return std::get<T>(loaders); };
 
-        // template <class ConstructingType, Loader<ConstructingType> DataLoader>
-        template <class ConstructingType, class DataLoader>
-        ConstructingType loadData(DataLoader loader, const std::filesystem::path &path)
+        // template <class ConstructingType, Loader<ConstructingType> DataManager>
+        template <class ConstructingType, class DataManager>
+        ConstructingType loadData(DataManager loader, const std::filesystem::path &path)
         {
             return loader.load(path);
         }
     };
+    */
 }

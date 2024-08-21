@@ -1,6 +1,6 @@
 #pragma once
 #include <DataManegement/DataManager.hpp>
-#include <DataManegement/CharacteristicManagement.hpp>
+
 namespace Tests
 {
 
