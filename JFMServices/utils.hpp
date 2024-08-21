@@ -20,4 +20,12 @@ namespace utils
 
         return tokens;
     };
+    template <size_t size>
+    inline std::array<double, size> cast(std::valarray<double> source)
+    {
+        std::array<double, size> destination;
+        for (const auto &[dest, src] : std::views::zip(destination, values))
+            dest = src;
+        return destination;
+    }
 }

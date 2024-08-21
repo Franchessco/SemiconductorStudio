@@ -1,7 +1,7 @@
 #pragma once
 #include "pch.hpp"
 #include "utils.hpp"
-#include "Parameters.hpp"
+#include "JFMParameters.hpp"
 namespace JFMService
 {
     enum FixingConfiguration
@@ -20,11 +20,11 @@ namespace JFMService
     {
     public:
         JFMAdditionalParameters() = default;
-        JFMAdditionalParameters(double Temperature, Parameters fixingValues, FixingConfiguration configuration);
+        JFMAdditionalParameters(double Temperature, JFMParameters fixingValues, FixingConfiguration configuration);
+        double Temperature{-1};
 
     private:
-        double m_Temperature{-1};
-        Parameters m_fixingValues;
+        JFMParameters m_fixingValues;
         FixingConfiguration m_fixingConfiguration;
     };
 }

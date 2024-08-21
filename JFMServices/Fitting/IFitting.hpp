@@ -1,6 +1,6 @@
 #pragma once
 #include "pch.hpp"
-#include "Models/Parameters.hpp"
+#include "Models/JFMParameters.hpp"
 namespace JFMService::FittingService
 {
     // NOTE Parameters
@@ -34,7 +34,7 @@ namespace JFMService::FittingService
         //--parameter list
         //  ID -- Name
         Models models;
-        Parameters parameters;
+        JFMParameters parameters;
         ModelParameters modelParameters;
         ParamBounds paramBounds;
     };

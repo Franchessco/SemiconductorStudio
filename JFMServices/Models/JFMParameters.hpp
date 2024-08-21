@@ -3,11 +3,12 @@
 
 namespace JFMService
 {
-    class Parameters
+    class JFMParameters
     {
     public:
-        Parameters(std::initializer_list<double> parameters)
+        JFMParameters(std::initializer_list<double> parameters)
             : m_parameters{parameters} {};
+        std::valarray<double> getParameters() { return m_parameters; };
 
     private:
         std::valarray<double> m_parameters;
