@@ -9,7 +9,7 @@ namespace JFMApp
 	class AppRunner
 	{
 	public:
-		AppRunner() = default;
+		AppRunner();
 		~AppRunner() = default;
 
 		AppRunner(const AppRunner&) = delete;

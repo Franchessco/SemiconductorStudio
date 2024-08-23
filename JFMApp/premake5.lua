@@ -8,7 +8,9 @@ project "JFMApp"
 
     files {
         "%{prj.location}/**.cpp",
-        "%{prj.location}/**.hpp"
+        "%{prj.location}/**.hpp",
+        "%{prj.location}/*.cpp",
+        "%{prj.location}/*.hpp"
     }
 
     includedirs {

@@ -8,8 +8,9 @@
 
 namespace JFMApp::Data {
 	struct ViewData {
-		PlotData m_plotData{};
-		BrowserData m_browserData{};
-		UIState m_uiState{};
+		PlotData plotData{};
+		BrowserData browserData{};
+		UIState uiState{};
+		NumericsConfig nConfig{};
 	};
 }

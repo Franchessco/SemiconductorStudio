@@ -5,6 +5,8 @@
 #include "NumericsConfig.hpp"
 #include "imgui.h"
 
+#include "implot.h"
+
 namespace JFMApp::Data {
 
 	struct Characteristic
@@ -36,41 +38,77 @@ namespace JFMApp::Data {
 		bool isSimulated{ false };
 		bool checked{ false };
 
-		ImVec4 color{};
+		ImVec4 color{ 0.96f, 0.53f, 0.26f, 1.0f };
+		float weight{ 1.0 };
 
 		std::string name{};
 		std::string description{};
 
 		//montecarlo
-		std::vector<std::pair<std::unordered_map<ParameterID, double>, double>> mcParameters{};
+		struct MCData {
+			ParameterMap parameters{};
+			double error{ -1.0 };
+			ParameterMap fixConfig{};
+		};
+		
+
+		
+
 
 		//fitted
-		std::vector<double> fittedParameters{};
+		ParameterMap fittedParameters{};
 		std::vector<double> fittedI{};
+
+		double fitError{ -1.0 };
 
 		//tuned
 		std::vector<double> tunedI{};
+		ParameterMap tunedParameters{};
+		std::unordered_map<ParameterID, bool> tempParametersActive{};
+
+		double tuneError{ -1.0 };
+
+
+
 
 
 		//fitting configuration
 		ModelID modelID{};
 		std::unordered_map<ParameterID, bool> fixedParameterIDs{};
-		std::unordered_map<ParameterID, double> initialGuess{};
+		ParameterMap initialGuess{};
 		struct MCConfig {
 			size_t n{};
 			size_t saveN{};
 			double sigma{};
+
+			std::partial_ordering operator<=>(const MCConfig&) const = default;
+
 		} mcConfig{};
+		ParamBounds bounds{};
+
+		bool useBounds{ false }, useInitial{ false };
 
 		std::string notes{};
 
 
-		static double TFL(double v, void*) { 
-			return std::log(std::max(v, std::numeric_limits<double>::epsilon())); 
+		//last saved config
+		ModelID savedModelID{};
+		std::unordered_map<ParameterID, bool> savedFixedParameterIDs{};
+		ParameterMap savedInitialGuess{};
+		MCConfig savedMCConfig{};
+		ParamBounds savedBounds{};
+
+		bool savedUseBounds{ false }, savedUseInitial{ false };
+
+		std::string savedNotes{};
+
+
+		static double TFL(double v, void*) {
+			return std::log(std::max(v, std::numeric_limits<double>::epsilon()));
 		}
 
-		static double TFNL(double v, void*) { 
-			return std::exp(v); 
+		static double TFNL(double v, void*) {
+			return std::exp(v);
 		}
 	};
 };

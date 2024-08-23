@@ -10,16 +10,16 @@
 namespace JFMApp::Views {
 
 	struct Widgets {
-		void Window(const std::function<void()>& widget, ImGuiWindowFlags flags = ImGuiWindowFlags_None);
-		void PlottingArea(Data::PlotData* data);
-		void BrowserArea(Data::BrowserData* data);
-		void CharacteristicInspector(Data::PlotData* data);
-		void MonteCarloInspector(Data::PlotData* data);
+		static void PlottingArea(Data::PlotData& data);
+		static void BrowserArea(Data::BrowserData& data);
+		static void CharacteristicList(Data::BrowserData& data);
+		static void CharacteristicInspector(Data::PlotData& data);
+		static void MonteCarloInspector(Data::PlotData& data);
 
-		void CharacteristicSelector(Data::BrowserData* data);
-		void FileSelector(Data::BrowserData* data);
-		void ViewMenu(Data::UIState* data);
-		void CharacteristicSettings(Data::BrowserData* data);
-		void GenerateData();
+		static void FileSelector(Data::BrowserData& data);
+		static void ViewMenu(Data::UIState& data);
+		static void GenerateData();
+
+		static void global_ds();
 	};
 }
