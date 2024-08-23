@@ -11,6 +11,12 @@ namespace JFMApp {
 
 	}
 
+	void App::init() {
+		m_state.nConfig = Data::NumericsConfig{};
+
+
+	}
+
 	void App::draw() {
 
 	}

@@ -7,3 +7,5 @@
 #include <filesystem>
 #include <unordered_map>
 #include <functional>
+#include <span>
+#include <array>

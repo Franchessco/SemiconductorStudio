@@ -1,6 +1,5 @@
 #pragma once
 #include "pch.hpp"
-
 #include "Characteristic.hpp"
 
 
@@ -29,21 +28,41 @@ namespace JFMApp::Data
 		bool plotRanged{ false };
 		bool plotFitted{ false };
 
-		ImVec4 colorRanged{}, colorFitted{};
+		ImVec4 colorRanged{ 0.61f, 0.26f, 0.96f, 1.0f }, colorFitted{ 0.0f, 1.0f, 0.0f, 1.0f };
 
 		bool hideNonActive{ false };
 
 		Characteristic* active{ nullptr };
+		NumericsConfig* paramConfig{ nullptr };
 
-		std::unordered_map<ParameterID, double> tempParameters{};
-		std::unordered_map<ParameterID, bool> tempParametersActive{};
+		struct MCPlotsData {
+			std::vector<Characteristic::MCData> mc{};
+			Data::Characteristic* characteristic{ nullptr };
+			std::array<ImVec4, 3> sig{ ImVec4{ 0.0f, 1.0f, 0.0f, 1.0f }, ImVec4{ 1.0f, 1.0f, 0.0f, 1.0f }, ImVec4{ 1.0f, 0.0f, 0.0f, 1.0f } };
+			std::pair<ParameterID, ParameterID> parameters{};
+			std::string name{};
+			int tab{ 0 };
+		};
 
-		struct PlotSettings {
+		std::vector<MCPlotsData> mcPlots{};
+
+		std::string mcTempName{};
+		std::pair<ParameterID, ParameterID> mcTempParams{};
+
+		ImVector<unsigned int> mcTabs{};
+
+		MCPlotsData* activeMC{ nullptr };
+
+		
+
+		bool configAll{ false };
+
+		static struct PlotSettings {
 			ImPlotFlags flags = ImPlotFlags_NoLegend;
 			ImPlotAxisFlags xFlags = ImPlotAxisFlags_None;
 			ImPlotAxisFlags yFlags = ImPlotAxisFlags_None;
-		} plotSettings{};
-	};	
+		} plotSettings;
+	};
 }
 
 

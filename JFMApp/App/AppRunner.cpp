@@ -1,5 +1,6 @@
 #include "pch.hpp"
 #include "AppRunner.hpp"
+#include "Widgets.hpp"
 
 
 namespace JFMApp {
@@ -22,6 +23,8 @@ namespace JFMApp {
 			for (auto& app : m_apps)
 			{
 				app->update();
+
+				JFMApp::Views::Widgets::global_ds();
 				app->draw();
 			}
 

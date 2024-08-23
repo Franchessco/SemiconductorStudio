@@ -2,14 +2,14 @@
 
 #include "pch.hpp"
 #include "ViewData.hpp"
-#include "INumerics.hpp"
-#include "IDataLoader.hpp"
+#include "IFitting.hpp"
+#include "IDataManager.hpp"
 
 namespace JFMApp {
 
 	struct AppServiceBundle {
-		std::shared_ptr<JFMServices::INumerics> numerics{};
-		std::shared_ptr<JFMServices::IDataLoader> dataLoader{};
+		std::shared_ptr<JFMService::FittingService::IFitting> numerics{};
+		std::shared_ptr<JFMService::DataManagementService::IDataManager> dataLoader{};
 	};
 
 	class App
@@ -25,13 +25,15 @@ namespace JFMApp {
 		App(App&&) = delete;
 		App& operator=(App&&) = delete;
 
+		void init();
+
 		void update();
 		void draw();
 
 	private:
 		Data::ViewData m_state{};
-		std::shared_ptr<JFMServices::INumerics> m_numerics{};
-		std::shared_ptr<JFMServices::IDataLoader> m_dataLoader{};
+		std::shared_ptr<JFMService::FittingService::IFitting> m_numerics{};
+		std::shared_ptr<JFMService::DataManagementService::IDataManager> m_dataLoader{};
 	};
 }
 
