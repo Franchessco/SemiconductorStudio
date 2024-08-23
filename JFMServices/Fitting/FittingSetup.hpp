@@ -163,8 +163,8 @@ namespace JFMService
     struct IVFittingSetup
     {
         IVFittingSetup() = default;
-        Parameters<size> simplexMin{};
-        Parameters<size> simplexMax{};
+        NumericStorm::Fitting::Parameters<size> simplexMin{};
+        NumericStorm::Fitting::Parameters<size> simplexMax{};
 
         // the parameter of the logarithmic distribution for the simplex creator
         double logP{0.5};
