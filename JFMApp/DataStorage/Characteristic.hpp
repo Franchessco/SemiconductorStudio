@@ -61,6 +61,8 @@ namespace JFMApp::Data {
 
 		double fitError{ -1.0 };
 
+		std::function<void()> m_tuneCallback{};
+
 		//tuned
 		std::vector<double> tunedI{};
 		ParameterMap tunedParameters{};
@@ -75,6 +77,7 @@ namespace JFMApp::Data {
 		//fitting configuration
 		ModelID modelID{};
 		std::unordered_map<ParameterID, bool> fixedParameterIDs{};
+		ParameterMap fixedParametersValues{};
 		ParameterMap initialGuess{};
 		struct MCConfig {
 			size_t n{};
@@ -94,6 +97,7 @@ namespace JFMApp::Data {
 		//last saved config
 		ModelID savedModelID{};
 		std::unordered_map<ParameterID, bool> savedFixedParameterIDs{};
+		ParameterMap savedFixedParametersValues{};
 		ParameterMap savedInitialGuess{};
 		MCConfig savedMCConfig{};
 		ParamBounds savedBounds{};

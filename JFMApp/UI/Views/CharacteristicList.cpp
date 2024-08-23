@@ -19,11 +19,11 @@ namespace JFMApp::Views {
 			ImGui::BeginGroup();
 
 			if (ImGui::Button("Update colors")) {
-
+				data.m_updateColorsCallback();
 			}
 
 			if (ImGui::Button("Invert Selection")) {
-
+				data.m_invertSelectionCallback();
 			}
 
 			ImGui::EndGroup();
@@ -33,7 +33,7 @@ namespace JFMApp::Views {
 			ImGui::BeginGroup();
 
 			if (ImGui::Button("Select all")) {
-
+				data.m_unselectAllCallback();
 			}
 
 			if (ImGui::Button("Unselect all")) {
@@ -47,11 +47,11 @@ namespace JFMApp::Views {
 			ImGui::BeginGroup();
 
 			if (ImGui::Button("Remove selected")) {
-
+				data.m_removeSelectedCallback();
 			}
 
 			if (ImGui::Button("Remove unselected")) {
-
+				data.m_removeUnselectedCallback();
 			}
 
 			ImGui::EndGroup();

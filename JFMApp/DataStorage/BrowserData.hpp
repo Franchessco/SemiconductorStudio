@@ -24,6 +24,19 @@ namespace JFMApp::Data
 		std::filesystem::path currentPath{};
 
 		std::vector<bool> m_selection{};
+
+
+		std::function<void()> m_loadCallback{};
+		std::function<void()> m_loadAllCallback{};
+
+		std::function<void()> m_updateColorsCallback{};
+		std::function<void()> m_invertSelectionCallback{};
+		std::function<void()> m_selectAllCallback{};
+		std::function<void()> m_unselectAllCallback{};
+		std::function<void()> m_removeSelectedCallback{};
+		std::function<void()> m_removeUnselectedCallback{};
+
+		
 	};
 }
 

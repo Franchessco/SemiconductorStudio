@@ -53,9 +53,26 @@ namespace JFMApp::Data
 
 		MCPlotsData* activeMC{ nullptr };
 
-		
-
 		bool configAll{ false };
+
+		//global config for all characteristics
+		ModelID globalModelID{};
+		std::unordered_map<ParameterID, bool> globalFixedParameterIDs{};
+		Characteristic::MCConfig globalMCConfig{};
+
+		//global saved config for all characteristics
+		ModelID savedGlobalModelID{};
+		std::unordered_map<ParameterID, bool> savedGlobalFixedParameterIDs{};
+		Characteristic::MCConfig savedGlobalMCConfig{};
+
+
+		std::function<void()> m_estimateCallback{};
+		std::function<void()> m_fitCallback{};
+		std::function<void()> m_tuneCallback{};
+		std::function<void()> m_saveMCConfCallback{};
+		std::function<void()> m_performMCCallback{};
+		std::function<void()> m_performMCOnAllCallback{};
+
 
 		static struct PlotSettings {
 			ImPlotFlags flags = ImPlotFlags_NoLegend;

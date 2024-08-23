@@ -15,11 +15,11 @@ namespace JFMApp::Views {
 				}
 
 				if (ImGui::Button("Load")) {
-
+					data.m_loadCallback();
 				}
 
 				if (ImGui::Button("Load all")) {
-
+					data.m_loadAllCallback();
 				}
 
 				ImGui::EndMenuBar();
@@ -33,7 +33,6 @@ namespace JFMApp::Views {
 			ImVec2 selSize = ImVec2(size, size);
 
 			if (ImGui::BeginTable("Browser", numItems), ImGuiTableFlags_BordersOuter) {
-				//put selectables in here
 
 				ImGui::TableNextRow();
 
@@ -84,7 +83,7 @@ namespace JFMApp::Views {
 
 							data.m_selection[sel_index - 1] = true;
 
-							//place for your callback
+							data.m_loadCallback();
 						}
 
 					}
