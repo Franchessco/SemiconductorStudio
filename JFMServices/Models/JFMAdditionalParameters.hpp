@@ -4,17 +4,27 @@
 #include "JFMParameters.hpp"
 namespace JFMService
 {
-    enum FixingConfiguration
+
+    enum FixingConfiguration : uint32_t
     {
 
-        A = BIT(1),
-        I0 = BIT(2),
-        Rs = BIT(3),
-        Rsh = BIT(4),
-        alpha = BIT(5),
-        Rsh2 = BIT(6),
+        A = BIT(0),
+        I0 = BIT(1),
+        Rs = BIT(2),
+        Rsh = BIT(3),
+        alpha = BIT(4),
+        Rsh2 = BIT(5),
 
     };
+    inline uint32_t toUnderlying(FixingConfiguration val) {return static_cast<uint32_t>(val);}
+
+    inline FixingConfiguration operator|(FixingConfiguration lhs, FixingConfiguration rhs) {return static_cast<FixingConfiguration>(toUnderlying(lhs) | toUnderlying(rhs));}
+
+    inline FixingConfiguration operator&(FixingConfiguration lhs, FixingConfiguration rhs) {return static_cast<FixingConfiguration>(toUnderlying(lhs) & toUnderlying(rhs));}
+
+    inline FixingConfiguration operator>>(FixingConfiguration lhs, uint32_t shift) {return static_cast<FixingConfiguration>(toUnderlying(lhs) >> shift);}
+
+    inline FixingConfiguration& operator>>=(FixingConfiguration& lhs, uint32_t shift) {lhs = lhs >> shift;return lhs;}
 
     class JFMAdditionalParameters
     {
@@ -22,9 +32,7 @@ namespace JFMService
         JFMAdditionalParameters() = default;
         JFMAdditionalParameters(double Temperature, JFMParameters fixingValues, FixingConfiguration configuration);
         double Temperature{-1};
-
-    private:
-        JFMParameters m_fixingValues;
-        FixingConfiguration m_fixingConfiguration;
+        JFMParameters fixingValues;
+        FixingConfiguration fixingConfiguration;
     };
 }

@@ -11,7 +11,6 @@
 #include <filesystem>
 #include <unordered_map>
 #include <map>
-#include <algorithm>
 #include <limits>
 #include <iomanip>
 #include <cmath>
@@ -34,3 +33,4 @@
 #include <utility>
 #include <tuple>
 #include <variant>
+#include <stdint.h>

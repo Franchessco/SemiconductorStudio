@@ -8,12 +8,14 @@ project "JFMServices"
 
     files {
         "%{prj.location}/**.cpp",
-        "%{prj.location}/**.hpp"
+        "%{prj.location}/**.hpp",
+        "%{wks.location}/Vendor/LambertW/*.h",
     }
 
     includedirs {
         "%{prj.location}",
         "%{prj.location}/**",
+        "%{wks.location}/Vendor/NumericStorm/NumericStorm/headers",
         "%{wks.location}/Vendor/NumericStorm/NumericStorm/headers/**",
         "%{wks.location}/Vendor/LambertW",
         "%{wks.location}/Vendor/yaml-cpp/include",
@@ -38,4 +40,4 @@ project "JFMServices"
 
     filter { "system:windows" }
         ignoredefaultlibraries { "msvcrt" }
-        links { "yaml-cpp" }
+        links { "yaml-cpp","LambertW" }

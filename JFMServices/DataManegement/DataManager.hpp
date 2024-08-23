@@ -30,6 +30,8 @@ namespace JFMService
 
     private:
         std::unordered_map<LoadingTypes, std::shared_ptr<Loader>> loaders;
+        bool useThreadsParallel{ false };
+        std::mutex mutex;
 
     private:
         LoadingTypes findLoader(const std::filesystem::path &path);

@@ -1,6 +1,6 @@
 #pragma once
 #include "pch.hpp"
-#include "IFitting.hpp"
+#include "../Fitting/JFMIFitting.hpp"
 namespace JFMService::DataManagementService
 {
     struct CharacteristicData

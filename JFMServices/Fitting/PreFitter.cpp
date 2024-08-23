@@ -2,11 +2,11 @@
 namespace JFMService
 {
 
-    std::pair<size_t, size_t> IPreFit::RangeData(const FittingService::PlotData &characteristic)
+    std::pair<size_t, size_t> AbstractPreFit::RangeData(const FittingService::PlotData &characteristic)
     {
         return std::make_pair<size_t, size_t>(getLowerRange(characteristic), getUpperRange(characteristic));
     };
-    size_t IPreFit::getLowerRange(const FittingService::PlotData &characteristic)
+    size_t AbstractPreFit::getLowerRange(const FittingService::PlotData &characteristic)
     {
         size_t start{0};
         for (const auto &[V, I] : std::views::zip(characteristic.voltageData, characteristic.voltageData))
@@ -14,11 +14,11 @@ namespace JFMService
                 start++;
         return start;
     };
-    size_t IPreFit::getUpperRange(const FittingService::PlotData &characteristic)
+    size_t AbstractPreFit::getUpperRange(const FittingService::PlotData &characteristic)
     {
         double sum{0.0};
         std::span<double> logged{characteristic.currentData};
-        std::ranges::transform(logged, logged, [](double item)
+        std::ranges::transform(logged, logged.begin(), [](double item)
                                { return std::log(item); });
 
         std::span<double> averaged{characteristic.currentData};
@@ -32,7 +32,7 @@ namespace JFMService
             averaged[i] = sum / std::min(i + 1, (size_t)N);
         }
         std::span<double> expped{logged};
-        std::ranges::transform(logged, expped, [](double item)
+        std::ranges::transform(logged, expped.begin(), [](double item)
                                { return std::exp(item); });
 
         std::pair<std::vector<double>, std::vector<double>> derivativeValues;

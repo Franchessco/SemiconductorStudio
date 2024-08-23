@@ -5,6 +5,17 @@
 namespace utils
 {
 
+    inline void generateVectorAtGivenRanges(std::vector<double> &destination, double min, double max, double step)
+    {
+        destination.clear();
+        int size = static_cast<int>((max - min) / step) + 1;
+        destination.resize(size);
+
+        int count = -1;
+        std::ranges::generate(destination.begin(), destination.end(), [&]()
+                              { count++; return min + count * step; });
+    };
+
     inline std::vector<std::string> spliting(const std::string &str, const char *delimiter)
     {
         std::vector<std::string> tokens;
@@ -21,10 +32,10 @@ namespace utils
         return tokens;
     };
     template <size_t size>
-    inline std::array<double, size> cast(std::valarray<double> source)
+    inline std::array<double, size> cast(const std::valarray<double> &source)
     {
         std::array<double, size> destination;
-        for (const auto &[dest, src] : std::views::zip(destination, values))
+        for (const auto &[dest, src] : std::views::zip(destination, source))
             dest = src;
         return destination;
     }

@@ -8,7 +8,7 @@ project "JunctionFitMaster"
 
     files {
         "%{prj.location}/**.cpp",
-        "%{prj.location}/**.hpp"
+        "%{prj.location}/**.hpp",
     }
 
 
@@ -16,13 +16,15 @@ project "JunctionFitMaster"
         "%{prj.location}/**",
 
         "%{wks.location}/JFMServices",
-
+        "%{wks.location}/Vendor/NumericStorm/NumericStorm/headers",
+        "%{wks.location}/Vendor/NumericStorm/NumericStorm/headers/**",
         "%{wks.location}/Vendor/imgui",
         "%{wks.location}/Vendor/imgui/backends",
         "%{wks.location}/Vendor/imgui/misc/cpp",
         "%{wks.location}/Vendor/implot",
         "%{wks.location}/Vendor/imgui/examples/libs/glfw/include",
-        "%{wks.location}/Vendor/yaml-cpp/include"
+        "%{wks.location}/Vendor/yaml-cpp/include",
+        "%{wks.location}/Vendor/LambertW"
     }
 
     targetdir("%{wks.location}/bin/")

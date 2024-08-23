@@ -11,11 +11,12 @@ workspace "JunctionFitMaster"
     startproject "JunctionFitMaster"
     
 group "JunctionFitMaster"
+    include "./JFMServices"
     include "./JunctionFitMaster"
     -- include "./JFMApp"
-    include "./JFMServices"
 
 group "Dependencies"
+    include "./Vendor/LambertW"
     include "./Vendor/imgui"
     include "./Vendor/implot"
     include "./Vendor/yaml-cpp"
