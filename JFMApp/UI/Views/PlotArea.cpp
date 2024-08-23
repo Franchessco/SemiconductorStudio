@@ -199,7 +199,7 @@ namespace JFMApp::Views {
 			float buttonW = ImGui::GetCursorPosX();
 
 			if (ImGui::Button("Estimate")) {
-
+				data.m_estimateCallback();
 			}
 
 			buttonW = ImGui::GetCursorPosX() - buttonW;
@@ -218,7 +218,7 @@ namespace JFMApp::Views {
 			ImGui::PushItemWidth(buttonW);
 
 			if (ImGui::Button("Fit")) {
-
+				data.m_fitCallback();
 			}
 
 			ImGui::PopItemWidth();
@@ -297,7 +297,7 @@ namespace JFMApp::Views {
 					ImGui::SameLine(0.0, 20.0);
 					if(ImGui::SliderFloat(data.paramConfig->parameters[id].c_str(), &val, min, max, "%e")){
 						value = val;
-
+						if(act.tempParametersActive[id]) data.m_tuneCallback();
 					}
 
 				}
@@ -313,8 +313,12 @@ namespace JFMApp::Views {
 
 		ImGui::SameLine(ImGui::GetContentRegionAvail().x * 0.8f);
 
-		if (ImGui::Button("Update values")) {
+		if (ImGui::Button("Update characteristic")) {
+			for (auto& [key, val] : act.fittedParameters) {
+				if(act.tempParametersActive[key]) val = act.tunedParameters[key];
+			}
 
+			act.m_tuneCallback();
 		}
 
 		if (!data.active) {
