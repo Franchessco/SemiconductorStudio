@@ -57,7 +57,7 @@ namespace JFMService
         using FitterMap = std::unordered_map<ModelID, std::shared_ptr<AbstractFitter>>;
 
     public:
-        Fitter() = default;
+        Fitter();
         void Fit(const FittingInput &input, Callback callback);
 
     private:

@@ -1,12 +1,13 @@
 #include "JFMFitter.hpp"
 #include "../Models/JFMAdditionalParameters.hpp"
 #include "../Models/JFMModels.hpp"
+#include "../Models/CalculateData.hpp"
 #include "FittingSetup.hpp"
 
 #include "../NumericStorm.hpp"
 namespace JFMService
 {
-
+	//! Abstract Fitter
 	template <size_t size>
 	IVFittingSetup<size> AbstractFitter::transferFittingSetUp(const FittingInput &input)
 	{
@@ -36,22 +37,6 @@ namespace JFMService
 
 		return initialPoint;
 	}
-
-	void FourParameterFitter::Fit(const FittingInput &input, Callback callback)
-	{
-		//! this can be rebuild and templated via model and number of parameters
-		IVFittingSetup<4> setUps = transferFittingSetUp<4>(input);
-		Data NSDdata = transferFittingData(input.initialData.characteristic);
-		JFMAdditionalParameters additionalParameters = transferAdditionalParameters(input.initialData.additionalParameters, input.fixConfig);
-		NumericStorm::Fitting::Parameters<4> initialPoint = transferInitialPoint(input.initialValues);
-
-		SimplexOptimizationResults<4> results = fit<4>(setUp, initial, data, additional);
-		ParameterMap fittingResult;
-		for (const auto &[dst, key, src] : std::views::zip(results.getParameters(), fittingResult))
-			dst = src;
-		if (callback)
-			callback(fittingResult);
-	}
 	template <size_t size>
 	SimplexOptimizationResults AbstractFitter::fit(const IVFittingSetup &setUp, const NumericStorm::Fitting::Parameters<size> &initialPoint, const Data &data, const AdditionalParameters &additionalParameters)
 	{
@@ -59,7 +44,6 @@ namespace JFMService
 		NSFitter fitter = getFitter<FourParameterModel, 4>(setUp);
 		return fitter.fit(initialPoint, data, additionalParameters);
 	}
-	void Fitter::Fit(const FittingInput &input, Callback callback) { fitterMap[input.initialData.modelID]->Fit(input, callback); }
 	Data AbstractFitter::transferFittingData(const PlotData &input)
 	{
 		Data singleData(2);
@@ -82,6 +66,25 @@ namespace JFMService
 
 		return additional;
 	}
+
+	//! Four Parameter Fitter
+	void FourParameterFitter::Fit(const FittingInput &input, Callback callback)
+	{
+		//! this can be rebuild and templated via model and number of parameters
+		IVFittingSetup<4> setUps = transferFittingSetUp<4>(input);
+		Data NSDdata = transferFittingData(input.initialData.characteristic);
+		JFMAdditionalParameters additionalParameters = transferAdditionalParameters(input.initialData.additionalParameters, input.fixConfig);
+		NumericStorm::Fitting::Parameters<4> initialPoint = transferInitialPoint(input.initialValues);
+
+		SimplexOptimizationResults<4> results = fit<4>(setUp, initial, data, additional);
+		ParameterMap fittingResult;
+		for (const auto &[dst, key, src] : std::views::zip(results.getParameters(), fittingResult))
+			dst = src;
+		if (callback)
+			callback(fittingResult);
+	}
+
+	//! Six Parameter Fitter
 	void SixParameterFitter::Fit(const FittingInput &input, Callback callback)
 	{
 		//! this can be rebuild
@@ -97,4 +100,17 @@ namespace JFMService
 		if (callback)
 			callback(fittingResult);
 	}
+
+	//! General Fitter
+	Fitter::Fitter()
+	{
+		fitterMap[Model4P] = std::make_shared<FourParameterFitter>();
+		fitterMap[Model6P] = std::make_shared<SixParameterFitter>();
+	}
+	void Fitter::Fit(const FittingInput &input, Callback callback)
+	{
+		// todo add checking validity of item inside the map
+		fitterMap[input.initialData.modelID]->Fit(input, callback);
+	}
+
 }
