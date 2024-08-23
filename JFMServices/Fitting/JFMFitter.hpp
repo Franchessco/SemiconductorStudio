@@ -31,19 +31,25 @@ namespace JFMService
 
     protected:
         template <size_t size>
-        std::array<IVFittingSetup<size>, 3> transferFittingSetUp(const FittingInput &input);
-        std::array<Data, 3> transferFittingData(const PlotData &input);
-        std::array<JFMAdditionalParameters, 3> transferAdditionalParameters(const AdditionalParameterMap &input, const ParameterMap &fixingConfig);
+        IVFittingSetup<size> transferFittingSetUp(const FittingInput &input);
+        Data transferFittingData(const PlotData &input);
+        JFMAdditionalParameters transferAdditionalParameters(const AdditionalParameterMap &input, const ParameterMap &fixingConfig);
+        template <size_t size>
+        NumericStorm::Fitting::Parameters<size> transferInitialPoint(const ParameterMap &initial);
+        template <size_t size>
+        SimplexOptimizationResults fit(const IVFittingSetup &setUp, const NumericStorm::Fitting::Parameters<size> &initialPoint, const Data &data, const AdditionalParameters &additionalParameters);
     };
 
     class FourParameterFitter : public AbstractFitter
     {
     public:
-        FourParameterFitter();
+        FourParameterFitter() = default;
         virtual void Fit(const FittingInput &input, Callback callback) override;
     };
     class SixParameterFitter : public AbstractFitter
     {
+        SixParameterFitter() = default;
+        virtual void Fit(const FittingInput &input, Callback callback) override;
     };
 
     class Fitter
