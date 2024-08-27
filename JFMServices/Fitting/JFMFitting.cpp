@@ -65,7 +65,7 @@ namespace JFMService::FittingService
             };
             JFMService::FittingService::Parameters map;
             std::string name;
-            for (auto index : std::ranges::iota_view(0, ParameterID::size))
+            for (auto index : std::ranges::iota_view(0,Fitters::ParameterID::size))
                 map[index] = ParameterIdToString(index);
             return map;
         };
@@ -83,7 +83,7 @@ namespace JFMService::FittingService
             std::vector<double> minBound{0.5, 1e-20, 1e-7, 10, 0, 0};
             std::vector<double> maxBound{20, 1e-3, 1e2, 1e9, 10, 1e-10};
             ParamBounds bounds;
-            for (const auto &[id, min, max] : std::views::zip(std::ranges::iota_view(0, ParameterID::size), minBound, maxBound))
+            for (const auto &[id, min, max] : std::views::zip(std::ranges::iota_view(0, Fitters::ParameterID::size), minBound, maxBound))
                 bounds[id] = std::make_pair(min, max);
             return bounds;
         };

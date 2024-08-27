@@ -1,5 +1,5 @@
 #pragma once
-#include "../Fitting/JFMFitting.hpp"
+#include "../Fitting/JFMIFitting.hpp"
 #include "DataManager.hpp"
 #include "../Fitting/PreFitter.hpp"
 #include "../Fitting/JFMFitter.hpp"
@@ -25,7 +25,7 @@ namespace JFMService::FittingService
     private:
         DataManager m_dataManager;
         PreFitter m_preFitter;
-        Fitter m_fitter;
+        Fitters::Fitter m_fitter;
         DataCalculator m_dataCalculator;
         const NumericsConfig m_numericsConfig;
 

@@ -2,9 +2,9 @@
 
 #include "pch.hpp"
 
-#include "../NumericStorm/NumericStorm/headers/Utils/Random.hpp"
+#include "Random.hpp"
 
-namespace JunctionFitMasterFromNS::Utils
+namespace JFMService
 {
 	using namespace NumericStorm::Utils;
 	class LogDist

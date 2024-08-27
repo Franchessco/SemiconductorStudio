@@ -1,19 +1,20 @@
 #pragma once
-#include "../NumericStorm.hpp"
-#include "../NumericStorm/NumericStorm/headers/Fitting/Nealder-Mead/SimplexCreator/SimplexCreatorSettings.hpp"
-#include "../NumericStorm/NumericStorm/headers/Fitting/VisitorOperationBase.hpp"
-#include "../NumericStorm/NumericStorm/headers/Fitting/Nealder-Mead/BasicSimplex/BasicSimplexOptimizerSettings.hpp"
-#include "../NumericStorm/NumericStorm/headers/Fitting/Nealder-Mead/BasicSimplex/BasicSimplexOptimizer.hpp"
-#include "../NumericStorm/NumericStorm/headers/Fitting/AdditionalParameters.hpp"
-#include "../NumericStorm/NumericStorm/headers/Utils/Random.hpp"
-#include "../NumericStorm/NumericStorm/headers/Fitting/Concepts/Model.hpp"
-#include "../NumericStorm/NumericStorm/headers/Fitting/Concepts/Optimizer.hpp"
-#include "../NumericStorm/NumericStorm/headers/Fitting/ModelBase.hpp"
-#include "../NumericStorm/NumericStorm/headers/Fitting/data.hpp"
-#include "../NumericStorm/NumericStorm/headers/Fitting/Fitter.hpp"
-#include "../Models/JFMModels.hpp"
+#include "NumericStorm.hpp"
+#include "SimplexCreatorSettings.hpp"
+#include "VisitorOperationBase.hpp"
+#include "BasicSimplexOptimizerSettings.hpp"
+#include "BasicSimplexOptimizer.hpp"
+#include "AdditionalParameters.hpp"
+#include "Random.hpp"
+#include "Model.hpp"
+#include "Optimizer.hpp"
+#include "ModelBase.hpp"
+#include "data.hpp"
+#include "Fitter.hpp"
+#include "Models/JFMModels.hpp"
+#include "Models/JFMErrorModel.hpp"
 
-#include "LogDist.hpp"
+#include "../Fitting/LogDist.hpp"
 namespace JFMService
 {
 
@@ -27,7 +28,7 @@ namespace JFMService
     public:
         LogCreatorSettings() = default;
 
-        LogCreatorSettings(const Parameters<parameter_size> &min, const Parameters<parameter_size> &max)
+        LogCreatorSettings(const NumericStorm::Fitting::Parameters<parameter_size> &min, const NumericStorm::Fitting::Parameters<parameter_size> &max)
             : SimplexCreatorSettings<parameter_size>(min, max) {};
 
         auto &getP()
@@ -68,21 +69,20 @@ namespace JFMService
             points.fill(input);
             points[0].evaluatePoint();
 
-            std::for_each(points.begin() + 1, points.end(), [&](auto& point)
-            {
-                size_t index{0};
-                std::for_each(point.begin(), point.end(), [&](auto &value)
-                              {
+            std::for_each(points.begin() + 1, points.end(), [&](auto &point)
+                          {
+                              size_t index{0};
+                              std::for_each(point.begin(), point.end(), [&](auto &value)
+                                            {
                             if (index == 1)
                                 value = LogDist::value(this->m_settings.getMinBounds()[index], this->m_settings.getMaxBounds()[index]);
                             else
                                 value = Random::Float(this->m_settings.getMinBounds()[index], this->m_settings.getMaxBounds()[index]);
                             index++; });
-                point.evaluatePoint();
-
-                typename SettingsT::Out figure{points};
-                return figure;
-            };
+                              point.evaluatePoint();
+                          });
+            typename SettingsT::Out figure{points};
+            return figure;
         };
     };
 
@@ -181,7 +181,7 @@ namespace JFMService
     };
 
     template <Model M, size_t size>
-    IVSimplexOptimizer<M> getOptimizer(IVFittingSetup<size> &config)
+    IVSimplexOptimizer<M> getOptimizer(const IVFittingSetup<size> &config)
     {
         using Settings = IVSimplexOptimizerSettings<M>;
         using Builder = typename Settings::IVSimplexOptimizerSettingsBuilder;
@@ -190,7 +190,7 @@ namespace JFMService
         logSettings.setP(config.logP);
 
         Builder builder{};
-        builder.errorModel(IVError{})
+        builder.errorModel(Chi2ErrorModel{})
             .addLogCreatorSettings(logSettings)
             .addOperationSettings({{BasicOperationsEnum::Reflect, config.reflec_coeff},
                                    {BasicOperationsEnum::Expand, config.expand_coeff},
@@ -201,15 +201,15 @@ namespace JFMService
 
         Settings settings = builder.build();
 
-        IVSimplexOptimizer<IVModel> optimizer{settings};
+        IVSimplexOptimizer<M> optimizer{settings};
 
         optimizer.setUp();
 
         return optimizer;
     }
     template <Model M, size_t size>
-    NumericStorm::Fitting::Fitter<IVSimplexOptimizer<M>> getFitter(IVFittingSetup<size> &config)
+    NumericStorm::Fitting::Fitter<IVSimplexOptimizer<M>> getFitter(const IVFittingSetup<size> &config)
     {
-        return Fitter<IVSimplexOptimizer<M>>{getOptimizer(config)};
+        return Fitter<IVSimplexOptimizer<M>>{getOptimizer<M,size>(config)};
     }
 }

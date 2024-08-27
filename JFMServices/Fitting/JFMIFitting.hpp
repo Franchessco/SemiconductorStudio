@@ -1,6 +1,5 @@
 #pragma once
 #include "pch.hpp"
-#include "Models/JFMParameters.hpp"
 namespace JFMService::FittingService
 {
 	// NOTE Parameters

@@ -21,10 +21,6 @@ namespace JFMService
         m_model = std::bind(&FourParameterModel::current, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
     }
 
-    void FourParameterModel::call(CalculatingData &input)
-    {
-    }
-
     void FourParameterModel::current(Data &data, const NumericStorm::Fitting::Parameters<4> &parameters, const JFMAdditionalParameters &additionalParameters)
     {
         // I(V) = I0(e^(q(V-IRs)/AKT)-1) - (V - IRs)/Rsh
@@ -49,9 +45,6 @@ namespace JFMService
     SixParameterModel::SixParameterModel()
     {
         m_model = std::bind(&SixParameterModel::current, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-    }
-    void SixParameterModel::call(CalculatingData &input)
-    {
     }
     void SixParameterModel::current(Data &data, const NumericStorm::Fitting::Parameters<6> &parameters, const JFMAdditionalParameters &additionalParameters)
     {

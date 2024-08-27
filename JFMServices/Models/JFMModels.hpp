@@ -13,13 +13,10 @@ namespace JFMService
     using namespace FittingService;
     using namespace NumericStorm::Fitting;
 
-        class FourParameterModel : public ModelBase<4, JFMAdditionalParameters>
+    class FourParameterModel : public ModelBase<4, JFMAdditionalParameters>
     {
     public:
         FourParameterModel();
-        void call(CalculatingData &input);
-
-    private:
         void current(Data &data, const NumericStorm::Fitting::Parameters<4> &parameters, const JFMAdditionalParameters &additionalParameters);
     };
 
@@ -27,9 +24,6 @@ namespace JFMService
     {
     public:
         SixParameterModel();
-        void call(CalculatingData &input);
-
-    private:
         void current(Data &data, const NumericStorm::Fitting::Parameters<6> &parameters, const JFMAdditionalParameters &additionalParameters);
     };
 }

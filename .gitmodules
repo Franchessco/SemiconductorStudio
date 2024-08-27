@@ -13,3 +13,6 @@
 [submodule "Vendor/googletest"]
 	path = Vendor/googletest
 	url = https://github.com/ArnoXX/googletest.git
+[submodule "Vendor/LambertW"]
+	path = Vendor/LambertW
+	url = https://github.com/SirJamesClarkMaxwell/LambertW.git
