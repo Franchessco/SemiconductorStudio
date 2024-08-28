@@ -1,11 +1,55 @@
 #include "MonteCarloEngine.hpp"
 #include "../Models/JFMErrorModel.hpp"
+#include "../Fitting/JFMFitter.hpp"
+#include "../Models/CalculateData.hpp"
 namespace JFMService
 {
+    MonteCarloEngine::MonteCarloEngine() {};
+
     void MonteCarloEngine::Simulate(const MCInput &input, std::function<void(MCOutput &&)> callback)
     {
+        MCOutput output;
+        output.mcResult.resize(input.iterations);
+        output.inputData = input;
+        std::shared_ptr<Fitters::AbstractFitter> fitter = m_fitter[input.startingData.initialData.modelID];
+
+        for (auto &dst : output.mcResult)
+            dst = simulate(fitter, output.inputData);
+        if (callback)
+            callback(std::move(output));
     }
 
+    void MonteCarloEngine::generateNoise(double &value, double factor)
+    {
+        double sigma = (value * factor/100) / 3;
+        std::normal_distribution<double> distribution{0, sigma};
+        value += distribution(m_generator);
+    }
+    MCResult MonteCarloEngine::simulate(const std::shared_ptr<Fitters::AbstractFitter> fitter, MCInput &input)
+    {
+        MCResult result;
+        auto callback = [&](const ParameterMap &&fittingResult)
+        { result.foundParameters = fittingResult; };
+        for (auto& I : input.startingData.initialData.characteristic.currentData)
+            generateNoise(I, input.noise);
+        fitter->Fit(input.startingData, callback);
+        calculateFittingError(input, result);
+        return result;
+    }
+    void MonteCarloEngine::calculateFittingError(const MCInput &input, MCResult &result)
+    {
+        CalculatingData data;
+        DataCalculator dataCalculator;
+        Chi2ErrorModel errorModel;
+        data.additionalParameters = input.startingData.initialData.additionalParameters;
+        data.parameters = result.foundParameters;
+        data.characteristic = input.startingData.initialData.characteristic;
+        data.modelID = input.startingData.initialData.modelID;
+        dataCalculator.CalculateData(data);
+        std::span<double> trueCurrent = input.startingData.initialData.characteristic.currentData;
+        std::span<double> fittedCurrent = data.characteristic.currentData;
+        result.error = errorModel.CalculateError(trueCurrent, fittedCurrent);
+    }
     double MonteCarloEngine::GetUncertainty(const MCOutput &output, ConfidenceLevel level, ParameterID id)
     {
         std::vector<double> values;
@@ -73,7 +117,7 @@ namespace JFMService
         std::ranges::for_each(max, [&](double &x)
                               { return x *= maxFactor; });
         Chi2ErrorModel errorModel;
-        double error = errorModel.CalculateError({ min.begin(), min.end() }, { max.begin(), max.end() });
+        double error = errorModel.CalculateError({min.begin(), min.end()}, {max.begin(), max.end()});
         return error;
     }
 

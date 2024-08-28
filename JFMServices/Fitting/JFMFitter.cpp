@@ -25,8 +25,8 @@ namespace JFMService::Fitters
 		min[I0] = std::pow(10, power);
 		max[I0] = 9 * std::pow(10, power);
 
-		setUp.simplexMin = min ;
-		setUp.simplexMax = max ;
+		setUp.simplexMin = min;
+		setUp.simplexMax = max;
 		return setUp;
 	}
 	template <size_t size>
@@ -61,7 +61,7 @@ namespace JFMService::Fitters
 		JFMParameters destination;
 		for (const auto &[dst, src] : std::views::zip(destination.getParameters(), fixingConfig))
 		{
-			auto& [key, val] = src;
+			auto &[key, val] = src;
 			dst = val;
 			fixingConfiguration | BIT(key);
 		}
@@ -79,10 +79,10 @@ namespace JFMService::Fitters
 		JFMAdditionalParameters additionalParameters = transferAdditionalParameters(input.initialData.additionalParameters, input.fixConfig);
 		NumericStorm::Fitting::Parameters<4> initialPoint = transferInitialPoint<4>(input.initialValues);
 
-		SimplexOptimizationResults<4> results = fit<FourParameterModel,4>(setUp, initialPoint, NSDdata, additionalParameters);
+		SimplexOptimizationResults<4> results = fit<FourParameterModel, 4>(setUp, initialPoint, NSDdata, additionalParameters);
 		ParameterMap fittingResult;
 
-		for (const auto& [dst, src, index] : std::views::zip(fittingResult, results.getParameters(), std::ranges::iota_view(0, 5)))
+		for (const auto &[dst, src, index] : std::views::zip(fittingResult, results.getParameters(), std::ranges::iota_view(0, 5)))
 			dst.second = src;
 
 		if (callback)
@@ -98,10 +98,10 @@ namespace JFMService::Fitters
 		JFMAdditionalParameters additionalParameters = transferAdditionalParameters(input.initialData.additionalParameters, input.fixConfig);
 		NumericStorm::Fitting::Parameters<6> initialPoint = transferInitialPoint<6>(input.initialValues);
 
-		SimplexOptimizationResults<6> results = fit<SixParameterModel,6>(setUp, initialPoint, NSDdata, additionalParameters);
+		SimplexOptimizationResults<6> results = fit<SixParameterModel, 6>(setUp, initialPoint, NSDdata, additionalParameters);
 		ParameterMap fittingResult;
 
-		for (const auto& [dst, src, index] : std::views::zip(fittingResult, results.getParameters(), std::ranges::iota_view(0, 7)))
+		for (const auto &[dst, src, index] : std::views::zip(fittingResult, results.getParameters(), std::ranges::iota_view(0, 7)))
 			dst.second = src;
 
 		if (callback)
@@ -120,4 +120,8 @@ namespace JFMService::Fitters
 		fitterMap[input.initialData.modelID]->Fit(input, callback);
 	}
 
+	std::shared_ptr<AbstractFitter> Fitter::operator[](ModelID id)
+	{
+		return fitterMap.at(id);
+	}
 }

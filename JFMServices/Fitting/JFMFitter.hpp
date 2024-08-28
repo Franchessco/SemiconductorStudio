@@ -28,16 +28,6 @@ namespace JFMService::Fitters
     {
     public:
         virtual void Fit(const FittingInput &input, Callback callback) = 0;
-
-        // protected:
-        //     template <size_t size>
-        //     IVFittingSetup<size> transferFittingSetUp(const FittingInput &input);
-        //     Data transferFittingData(const PlotData &input);
-        //     JFMAdditionalParameters transferAdditionalParameters(const AdditionalParameterMap &input, const ParameterMap &fixingConfig);
-        //     template <size_t size>
-        //     NumericStorm::Fitting::Parameters<size> transferInitialPoint(const ParameterMap &initial);
-        //     template <size_t size>
-        //     SimplexOptimizationResults<size> fit(const IVFittingSetup<size> &setUp, const NumericStorm::Fitting::Parameters<size> &initialPoint, const Data &data, const AdditionalParameters &additionalParameters);
     };
 
     class FourParameterFitter : public AbstractFitter
@@ -60,6 +50,7 @@ namespace JFMService::Fitters
     public:
         Fitter();
         void Fit(const FittingInput &input, Callback callback);
+        std::shared_ptr<AbstractFitter> operator[](ModelID id);
 
     private:
         FitterMap fitterMap{};
