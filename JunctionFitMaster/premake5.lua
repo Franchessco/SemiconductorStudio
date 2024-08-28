@@ -26,6 +26,10 @@ project "JunctionFitMaster"
         "%{wks.location}/Vendor/yaml-cpp/include",
         "%{wks.location}/Vendor/LambertW"
     }
+    defines
+    {
+             "YAML_CPP_STATIC_DEFINE"
+    }
 
     targetdir("%{wks.location}/bin/")
     objdir("%{wks.location}/obj/%{cfg.buildcfg}")
@@ -42,7 +46,7 @@ project "JunctionFitMaster"
     filter { "system:windows" }
         ignoredefaultlibraries { "msvcrt" }
         -- links { "JFMApp", "JFMServices" }
-        links {  "JFMServices" }
+        links {  "JFMServices","yaml-cpp" }
 
 
     

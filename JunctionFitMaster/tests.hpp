@@ -12,5 +12,5 @@ namespace Tests
     void testDataManager();
     void testLoadingCharacteristics();
     void testModel();
-
+    void testYAML();
 };

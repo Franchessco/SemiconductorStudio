@@ -10,7 +10,7 @@ namespace JFMService
         Characteristic = 0,
         MonteCarloResult
     };
-    class CharacteristicLoader;
+    
     class DataManager : public DataManagementService::IDataManager
     {
         using LoaderOutput = DataManagementService::LoaderOutput;
@@ -30,7 +30,7 @@ namespace JFMService
 
     private:
         std::unordered_map<LoadingTypes, std::shared_ptr<Loader>> loaders;
-        bool useThreadsParallel{ false };
+        bool useThreadsParallel{false};
         std::mutex mutex;
 
     private:

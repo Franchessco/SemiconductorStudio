@@ -1,9 +1,10 @@
 #include "tests.hpp"
-
+#include "yaml-cpp/yaml.h"
 void Tests::test()
 {
-    testDataManager();
-    testModel();
+    // testDataManager();
+    // testModel();
+    testYAML();
 }
 
 void Tests::testDataManager()
@@ -30,6 +31,12 @@ void Tests::testModel()
     data[0] = voltages;
     data[1] = currents;
     FourParameterModel model;
-
-    
+}
+struct MC
+{
+    std::valarray<double> parameters;
+    double error;
+};
+void Tests::testYAML()
+{
 }
