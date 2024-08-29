@@ -40,6 +40,9 @@ namespace JFMService
 
         for (const auto &[V, I] : std::views::zip(data[0], data[1]))
             func(V, I, I0, A, Rsh, Rs, additionalParameters.Temperature);
+    }
+    void FourParameterModel::call(const CalculatingData& data)
+    {
     };
 
     SixParameterModel::SixParameterModel()
@@ -66,6 +69,10 @@ namespace JFMService
 
         for (const auto &[V, I] : std::views::zip(data[0], data[1]))
             func(V, I, I0, A, Rsh, Rs, alpha, Rsh2, additionalParameters.Temperature);
+    }
+    void SixParameterModel::call(const CalculatingData& data)
+    {
+
     };
 
 }

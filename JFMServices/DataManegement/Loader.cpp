@@ -8,21 +8,7 @@
 namespace JFMService
 {
 
-    Fitters::ParameterID parameterNameToID(const std::string &name)
-    {
-        if (name == "A")
-            return Fitters::ParameterID::A;
-        if (name == "I0")
-            return Fitters::ParameterID::I0;
-        if (name == "Rs")
-            return Fitters::ParameterID::Rs;
-        if (name == "Rch")
-            return Fitters::ParameterID::Rsh;
-        if (name == "alpha")
-            return Fitters::ParameterID::alpha;
-        if (name == "Rsh2")
-            return Fitters::ParameterID::Rsh2;
-    };
+
     //! CharacteristicLoader
     CharacteristicLoader::CharacteristicLoader()
     {
@@ -180,7 +166,6 @@ namespace JFMService
     }
     void MonteCarloResultLoader::transferParameters(ParameterMap &destination, const std::vector<ParameterName> names, const std::vector<double> values)
     {
-
         for (const auto &[name, value] : std::views::zip(names, values))
             destination[parameterNameToID(name)] = value;
     };

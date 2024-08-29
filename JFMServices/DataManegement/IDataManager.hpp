@@ -1,6 +1,7 @@
 #pragma once
 #include "pch.hpp"
 #include "../Fitting/JFMIFitting.hpp"
+#include "../Fitting/JFMFitter.hpp"
 namespace JFMService::DataManagementService
 {
     struct CharacteristicData
@@ -48,5 +49,40 @@ namespace JFMService::DataManagementService
 
         virtual std::vector<std::string> GetDirectories(const path &path) = 0;
         virtual std::vector<std::string> GetFiles(const path &path) = 0;
+    };
+    static Fitters::ParameterID parameterNameToID(const std::string &name)
+    {
+        if (name == "A")
+            return Fitters::ParameterID::A;
+        if (name == "I0")
+            return Fitters::ParameterID::I0;
+        if (name == "Rs")
+            return Fitters::ParameterID::Rs;
+        if (name == "Rch")
+            return Fitters::ParameterID::Rsh;
+        if (name == "alpha")
+            return Fitters::ParameterID::alpha;
+        if (name == "Rsh2")
+            return Fitters::ParameterID::Rsh2;
+    };
+    static std::string parameterIdToString(Fitters::ParameterID id)
+    {
+        switch (id)
+        {
+        case Fitters::ParameterID::A:
+            return "A";
+        case Fitters::ParameterID::I0:
+            return "I0";
+        case Fitters::ParameterID::Rs:
+            return "Rs";
+        case Fitters::ParameterID::Rsh:
+            return "Rsh";
+        case Fitters::ParameterID::alpha:
+            return "alpha";
+        case Fitters::ParameterID::Rsh2:
+            return "Rsh2";
+        default:
+            return "";
+        }
     };
 }

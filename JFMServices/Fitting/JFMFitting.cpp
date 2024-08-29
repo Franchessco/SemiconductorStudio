@@ -1,5 +1,6 @@
 #include "JFMFitting.hpp"
 #include "CalculateData.hpp"
+#include "IDataManager.hpp"
 namespace JFMService::FittingService
 {
 #define ID_TO_NAME(ID) return #ID
@@ -28,9 +29,9 @@ namespace JFMService::FittingService
                 switch (id)
                 {
                 case Model4P:
-                    return "Four Parameter Model";
+                    return "FourParameterModel";
                 case Model6P:
-                    return "Six Parameter Model";
+                    return "SixParameterModel";
 
                 default:
                     break;
@@ -43,30 +44,10 @@ namespace JFMService::FittingService
         };
         auto createParameterMap = [&]()
         {
-            auto ParameterIdToString = [](int id)
-            {
-                switch (id)
-                {
-                case A:
-                    return "A";
-                case I0:
-                    return "I0";
-                case Rs:
-                    return "Rs";
-                case Rsh:
-                    return "Rsh";
-                case alpha:
-                    return "alpha";
-                case Rsh2:
-                    return "Rsh2";
-                default:
-                    return "";
-                }
-            };
             JFMService::FittingService::Parameters map;
             std::string name;
-            for (auto index : std::ranges::iota_view(0,Fitters::ParameterID::size))
-                map[index] = ParameterIdToString(index);
+            for (auto index : std::ranges::iota_view(0, Fitters::ParameterID::size))
+                map[index] = DataManagementService::parameterIdToString((Fitters::ParameterID)index);
             return map;
         };
         auto createModelsParameterMap = [&]()

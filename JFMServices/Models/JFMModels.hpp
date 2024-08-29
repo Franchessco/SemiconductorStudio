@@ -18,6 +18,7 @@ namespace JFMService
     public:
         FourParameterModel();
         void current(Data &data, const NumericStorm::Fitting::Parameters<4> &parameters, const JFMAdditionalParameters &additionalParameters);
+        void call(const CalculatingData& data);
     };
 
     class SixParameterModel : public ModelBase<6, JFMAdditionalParameters>
@@ -25,5 +26,6 @@ namespace JFMService
     public:
         SixParameterModel();
         void current(Data &data, const NumericStorm::Fitting::Parameters<6> &parameters, const JFMAdditionalParameters &additionalParameters);
+        void call(const CalculatingData& data);
     };
 }
