@@ -85,7 +85,7 @@ namespace JFMService
     LoaderOutput MonteCarloResultLoader::Load(const std::filesystem::path &path)
     {
 
-        std::ifstream stream("test.yaml");
+        std::ifstream stream(path.c_str());
         std::stringstream strStream;
         strStream << stream.rdbuf();
 
@@ -98,6 +98,7 @@ namespace JFMService
         auto config = data["config"];
         loadConfig(config, inputToFitting);
         std::vector<ParameterName> order = config["order"].as <std::vector<ParameterName>>();
+        loadedData.inputData = inputToFitting;
         loadedData.mcResult = loadFittingResults(data["data"],  order,inputToFitting.iterations);
 
         output.mcData = std::make_unique<FittingService::MCOutput>(loadedData);
@@ -105,7 +106,7 @@ namespace JFMService
     }
     bool MonteCarloResultLoader::CheckExtentionCompatibility(const std::filesystem::path &path)
     {
-        return path.extension() != "yaml";
+        return path.extension() == "yaml";
     }
     void MonteCarloResultLoader::loadConfig(const YAML::Node &config, MCInput &destination)
     {
@@ -157,10 +158,11 @@ namespace JFMService
         };
         std::vector<MCResult> result{size};
         MCResult singleResult;
-        for (const auto &item : node)
+        for (const auto &[item,dst] : std::views::zip(node,result))
         {
             singleResult.foundParameters = transferArrayToMap(item["result"]["parameters"].as<std::vector<double>>());
             singleResult.error = item["result"]["error"].as<double>();
+            dst = singleResult;
         }
         return result;
     }

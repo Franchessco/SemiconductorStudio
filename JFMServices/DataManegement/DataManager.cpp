@@ -66,7 +66,7 @@ namespace JFMService
 		// todo improve this logic later, add method in loader which will check possibility of loading this type of file
 		for (const auto &[loadingType, loader] : loaders)
 		{
-			if (!loader->CheckExtentionCompatibility(path))
+			if (loader->CheckExtentionCompatibility(path))
 				continue;
 			else
 				return loadingType;

@@ -58,7 +58,7 @@ namespace JFMService::DataManagementService
             return Fitters::ParameterID::I0;
         if (name == "Rs")
             return Fitters::ParameterID::Rs;
-        if (name == "Rch")
+        if (name == "Rsh")
             return Fitters::ParameterID::Rsh;
         if (name == "alpha")
             return Fitters::ParameterID::alpha;
