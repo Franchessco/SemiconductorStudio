@@ -38,11 +38,11 @@ namespace JFMService::DataManagementService
         using VectorCallback = std::function<void(std::vector<LoaderOutput>)>; // todo change this type to be more suitable
         using path = std::filesystem::path;
 
-        virtual void load(const path &path, const Callback &callback) = 0;
-        virtual void load(const std::vector<path> &paths, const VectorCallback &callbacks) = 0;
+        virtual void Load(const path &path, const Callback &callback) = 0;
+        virtual void Load(const std::vector<path> &paths, const VectorCallback &callbacks) = 0;
 
-        virtual void save(const path &path, const LoaderOutput &input, const Callback &callback) = 0;
-        virtual void save(const std::vector<path> &paths, const std::vector<LoaderOutput> &input, const VectorCallback &callbacks) = 0;
+        virtual void Save(const path &path, const LoaderOutput &input, const Callback &callback) = 0;
+        virtual void Save(const std::vector<path> &paths, const std::vector<LoaderOutput> &input, const VectorCallback &callbacks) = 0;
 
         virtual void MoveInto(path &currentPath, const std::string &destination) = 0;
         virtual void MoveBack(path &currentPath) = 0;

@@ -13,4 +13,6 @@ namespace Tests
     void testLoadingCharacteristics();
     void testModel();
     void testYAML();
+    void testYAMLLoading();
+    void testYAMLDumping();
 };

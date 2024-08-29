@@ -10,17 +10,18 @@ namespace JFMService
         Characteristic = 0,
         MonteCarloResult
     };
-    
+
     class DataManager : public DataManagementService::IDataManager
     {
         using LoaderOutput = DataManagementService::LoaderOutput;
 
     public:
-        virtual void load(const path &path, const Callback &callback) override;
-        virtual void load(const std::vector<path> &paths, const VectorCallback &callbacks) override;
+        DataManager();
+        virtual void Load(const path &path, const Callback &callback) override;
+        virtual void Load(const std::vector<path> &paths, const VectorCallback &callbacks) override;
 
-        virtual void save(const path &path, const LoaderOutput &input, const Callback &callback) override;
-        virtual void save(const std::vector<path> &paths, const std::vector<LoaderOutput> &input, const VectorCallback &callbacks) override;
+        virtual void Save(const path &path, const LoaderOutput &input, const Callback &callback) override;
+        virtual void Save(const std::vector<path> &paths, const std::vector<LoaderOutput> &input, const VectorCallback &callbacks) override;
 
         virtual void MoveInto(path &currentPath, const std::string &destination) override;
         virtual void MoveBack(path &currentPath) override;

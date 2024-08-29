@@ -37,12 +37,11 @@ namespace JFMService
     {
         MCOutput data = *(toSave).mcData;
         YAML::Emitter out;
-        out << YAML::BeginMap;
+
         emitConfig(out, data.inputData);
-        out << YAML::EndMap;
-        out << YAML::BeginMap;
         emitMCSimulation(out, data.mcResult);
-        out << YAML::EndMap;
+        std::ofstream output(path);
+        output << out.c_str();
     };
 
     void MonteCarloResultDumper::Save(const std::vector<path> &path, const std::vector<LoaderOutput> &toSave, const VectorCallback &callback)
@@ -50,6 +49,7 @@ namespace JFMService
     }
     void MonteCarloResultDumper::emitConfig(YAML::Emitter &emitter, const MCInput &toEmit)
     {
+        emitter << YAML::BeginMap;
 
         emitter << YAML::Key << "model" << YAML::Value << transferModelIDToString(toEmit.startingData.initialData.modelID);
         emitter << YAML::Key << "relativePath" << YAML::Value << toEmit.relPath.c_str();
@@ -76,8 +76,25 @@ namespace JFMService
         }
         emitter << YAML::EndSeq;
         emitter << YAML::Key << "noise" << YAML::Value << toEmit.noise;
-        
+        emitter << YAML::EndMap;
     }
-    void MonteCarloResultDumper::emitMCSimulation(YAML::Emitter &emitter, const std::vector<MCResult> &simulation) {
+    void MonteCarloResultDumper::emitMCSimulation(YAML::Emitter &emitter, const std::vector<MCResult> &simulation)
+    {
+        // data
+        emitter << YAML::BeginMap;
+        emitter << YAML::Key << "data" << YAML::Value;
+        emitter << YAML::BeginSeq;
+        for (const auto &result : simulation)
+        {
+            // result
+            emitter << YAML::BeginMap << YAML::Key << "result";
+            emitter << YAML::Value << YAML::BeginSeq;
+            serializeParameters(emitter, result.foundParameters);
+            emitter << YAML::EndSeq;
+            emitter << YAML::Key << "error" << YAML::Value << result.error << YAML::EndMap;
+        }
+
+        emitter << YAML::EndSeq; // parameters
+        emitter << YAML::EndMap; // data
     };
 }
