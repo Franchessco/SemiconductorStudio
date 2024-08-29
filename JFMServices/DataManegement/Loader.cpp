@@ -8,11 +8,10 @@
 namespace JFMService
 {
 
-
     //! CharacteristicLoader
     CharacteristicLoader::CharacteristicLoader()
     {
-        loaders["dat"] = std::bind(&CharacteristicLoader::loadDatContent, this, std::placeholders::_1);
+        loaders[".dat"] = std::bind(&CharacteristicLoader::loadDatContent, this, std::placeholders::_1);
     };
     LoaderOutput CharacteristicLoader::Load(const std::filesystem::path &path)
     {
@@ -41,7 +40,8 @@ namespace JFMService
     };
     void CharacteristicLoader::parseContent(const std::filesystem::path &path, std::string &content, LoaderOutput &output)
     {
-        auto data = loaders.at(path.extension().string())(content);
+        auto ex = path.extension().string();
+        auto data = loaders.at(ex)(content);
         double temperature = readTemperature(path.filename().string());
         std::string name = readName(path);
         output.data = std::move(std::make_unique<DataManagementService::CharacteristicData>(data, temperature, name));
@@ -68,7 +68,8 @@ namespace JFMService
     };
     bool CharacteristicLoader::CheckExtentionCompatibility(const std::filesystem::path &path)
     {
-        return loaders.find(path.extension().string()) == loaders.end();
+        bool found = loaders.find(path.extension().string()) != loaders.end();
+        return found;
     };
 
     double CharacteristicLoader::readTemperature(const std::string &name)
@@ -97,16 +98,16 @@ namespace JFMService
         YAML::Node data = YAML::Load(strStream.str());
         auto config = data["config"];
         loadConfig(config, inputToFitting);
-        std::vector<ParameterName> order = config["order"].as <std::vector<ParameterName>>();
+        std::vector<ParameterName> order = config["order"].as<std::vector<ParameterName>>();
         loadedData.inputData = inputToFitting;
-        loadedData.mcResult = loadFittingResults(data["data"],  order,inputToFitting.iterations);
+        loadedData.mcResult = loadFittingResults(data["data"], order, inputToFitting.iterations);
 
         output.mcData = std::make_unique<FittingService::MCOutput>(loadedData);
         return output;
     }
     bool MonteCarloResultLoader::CheckExtentionCompatibility(const std::filesystem::path &path)
     {
-        return path.extension() == "yaml";
+        return path.extension() == ".yaml";
     }
     void MonteCarloResultLoader::loadConfig(const YAML::Node &config, MCInput &destination)
     {
@@ -147,7 +148,7 @@ namespace JFMService
         destination.startingData.fixConfig = additional;
         destination.noise = noise;
     }
-    std::vector<MCResult> MonteCarloResultLoader::loadFittingResults(const YAML::Node & node, std::vector<ParameterName>&order, size_t size)
+    std::vector<MCResult> MonteCarloResultLoader::loadFittingResults(const YAML::Node &node, std::vector<ParameterName> &order, size_t size)
     {
         using namespace FittingService;
         auto transferArrayToMap = [&](std::vector<double> params)
@@ -158,7 +159,7 @@ namespace JFMService
         };
         std::vector<MCResult> result{size};
         MCResult singleResult;
-        for (const auto &[item,dst] : std::views::zip(node,result))
+        for (const auto &[item, dst] : std::views::zip(node, result))
         {
             singleResult.foundParameters = transferArrayToMap(item["result"]["parameters"].as<std::vector<double>>());
             singleResult.error = item["result"]["error"].as<double>();

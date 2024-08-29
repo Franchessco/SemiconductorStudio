@@ -2,21 +2,29 @@
 #include "yaml-cpp/yaml.h"
 void Tests::test()
 {
-    // testDataManager();
+    testDataManager();
     // testModel();
-    testYAML();
+    //testYAML();
 }
 
 void Tests::testDataManager()
 {
     std::cout << "test Data Manager" << std::endl;
     testLoadingCharacteristics();
+    testYAMLLoading();
 }
 
 void Tests::testLoadingCharacteristics()
 {
     std::cout << "----------------------" << std::endl;
     std::cout << "Loading Characteristics" << std::endl;
+    DataManager manager;
+    LoaderOutput loaded;
+    manager.Load("ivd_HZB25_T181_L0.dat", [&](LoaderOutput output)
+                 { loaded = std::move(output); });
+    double T = (*loaded.data).Temperature;
+    std::string name = (*loaded.data).Name;
+    std::vector<double> V = (*loaded.data)[CharacteristicData::Voltage];
 }
 
 void Tests::testModel()
@@ -35,18 +43,19 @@ void Tests::testModel()
 
 void Tests::testYAML()
 {
-    testYAMLLoading();
     testYAMLDumping();
 };
 void Tests::testYAMLLoading()
 {
+
+    std::cout << "----------------------" << std::endl;
+    std::cout << "Loading YAML config " << std::endl;
     using namespace JFMService;
     DataManager manager;
     LoaderOutput loaded;
     manager.Load("test.yaml", [&](LoaderOutput output)
                  { loaded = std::move(output); });
     MCOutput out = *(loaded.mcData);
-
 };
 void Tests::testYAMLDumping() {
 
