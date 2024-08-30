@@ -11,7 +11,7 @@ namespace JFMApp::Views {
 		}
 
 		ImVec2 tableSize = ImVec2(ImGui::GetContentRegionAvail().x, 0.0);
-		ImGuiTableFlags tableFlags = ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersOuter | ImGuiTableFlags_BordersInner;
+		ImGuiTableFlags tableFlags = ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersOuter | ImGuiTableFlags_BordersInner | ImGuiTableFlags_SizingStretchProp;
 
 		if (ImGui::BeginTable(ch.name.c_str(), 3, tableFlags, tableSize)) {
 			ImGui::TableSetupColumn("Fixed parameters");
@@ -21,29 +21,27 @@ namespace JFMApp::Views {
 			ImGui::TableHeadersRow();
 
 			ImGui::TableNextRow();
-
+			ImGui::TableNextColumn();
 			//Fixed parameters
 			{
-
-				if (ch.fixedParameterIDs != ch.savedFixedParameterIDs) {
+				bool col = false;
+				if (ch.fixedParameterIDs != ch.savedFixedParameterIDs || ch.fixedParametersValues != ch.savedFixedParametersValues) {
 					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0, 0.0, 0.0, 1.0));
+					col = true;
 				}
 
-				int columns = std::min(2, (int)ch.fixedParameterIDs.size());
 
-				if (ImGui::BeginTable("Fix Params", columns, tableFlags & ~ImGuiTableFlags_BordersInner)) {
-					ImGui::TableNextRow();
-					for (auto& [key, val] : ch.fixedParameterIDs) {
-						ImGui::Checkbox(nConf->parameters[key].c_str(), &val);
-						ImGui::TableNextColumn();
-						ImGui::InputDouble(nConf->parameters[key].c_str(), &ch.fixedParametersValues[key], 0.0, 0.0, "%e");
-						ImGui::TableNextColumn();
+				auto& params = nConf->modelParameters[ch.modelID];
+				for (const auto& key : params) {
+					std::string cname = "##" + nConf->parameters[key];
+					ImGui::Checkbox(cname.c_str(), &ch.fixedParameterIDs[key]);
+					ImGui::SameLine();
+					if (ImGui::InputDouble(nConf->parameters[key].c_str(), &ch.fixedParametersValues[key], 0.0, 0.0, "%e") && ImGui::IsItemDeactivatedAfterEdit()) {
+						ch.fixedParametersValues[key] = std::clamp(ch.fixedParametersValues[key], nConf->paramBounds[key].first, nConf->paramBounds[key].second);
 					}
-
-					ImGui::EndTable();
 				}
 
-				if (ch.fixedParameterIDs != ch.savedFixedParameterIDs) {
+				if (col) {
 					ImGui::PopStyleColor();
 				}
 
@@ -53,17 +51,21 @@ namespace JFMApp::Views {
 
 			//Initial values
 			{
+				bool col = false;
 				if (ch.initialGuess != ch.savedInitialGuess || ch.useInitial != ch.savedUseInitial) {
 					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0, 0.0, 0.0, 1.0));
+					col = true;
 				}
 
 				ImGui::Checkbox("Use initial guess", &ch.useInitial);
-				for (auto& [key, val] : ch.initialGuess) {
-					if (ImGui::InputDouble(nConf->parameters[key].c_str(), &val, 0.0, 0.0, "%e"))
-						val = std::clamp(val, nConf->paramBounds[key].first, nConf->paramBounds[key].second);
+				auto& params = nConf->modelParameters[ch.modelID];
+				for (auto& key : params) {
+					std::string gname = nConf->parameters[key] + " guess";
+					if (ImGui::InputDouble(gname.c_str(), &ch.initialGuess[key], 0.0, 0.0, "%e") && ImGui::IsItemDeactivatedAfterEdit())
+						ch.initialGuess[key] = std::clamp(ch.initialGuess[key], nConf->paramBounds[key].first, nConf->paramBounds[key].second);
 				}
 
-				if (ch.fixedParameterIDs != ch.savedFixedParameterIDs) {
+				if (col) {
 					ImGui::PopStyleColor();
 				}
 			}
@@ -72,17 +74,24 @@ namespace JFMApp::Views {
 
 			//Model
 			{
+				bool col = false;
 				if (ch.modelID != ch.savedModelID) {
 					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0, 0.0, 0.0, 1.0));
+					col = true;
 				}
+				if (ImGui::BeginCombo("##Model", nConf->models[ch.modelID].c_str(), ImGuiComboFlags_WidthFitPreview)) {
+					for (auto& [id, name] : nConf->models) {
+						if (ImGui::Selectable(name.c_str(), id == ch.modelID)) {
 
-				for (auto& [id, name] : nConf->models) {
-					if (ImGui::Selectable(name.c_str(), id == ch.modelID)) {
-						ch.modelID = id;
+							ch.modelID = id;
+						}
 					}
+
+					ImGui::EndCombo();
 				}
 
-				if (ch.fixedParameterIDs != ch.savedFixedParameterIDs) {
+
+				if (col) {
 					ImGui::PopStyleColor();
 				}
 			}
@@ -91,17 +100,19 @@ namespace JFMApp::Views {
 		}
 
 		if (ImGui::BeginTable("MCConfig", 2, tableFlags, tableSize)) {
-			ImGui::TableSetupColumn("MC Config");
+			ImGui::TableSetupColumn("MC Config", ImGuiTableColumnFlags_WidthFixed, tableSize.x * 0.25f);
 			ImGui::TableSetupColumn("Bounds");
 
 			ImGui::TableHeadersRow();
 
 			ImGui::TableNextRow();
-
+			ImGui::TableNextColumn();
 			//MC config
 			{
+				bool col = false;
 				if (ch.mcConfig != ch.savedMCConfig) {
 					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0, 0.0, 0.0, 1.0));
+					col = true;
 				}
 
 				int n = ch.mcConfig.n;
@@ -109,18 +120,18 @@ namespace JFMApp::Views {
 				double sigma = ch.mcConfig.sigma;
 
 				if (ImGui::InputInt("N", &n))
-					n = std::max(1, n);
+					n = std::max(0, n);
 
 				if (ImGui::InputInt("Save N", &saveN))
-					saveN = std::max(1, saveN);
+					saveN = std::max(0, saveN);
 
-				if (ImGui::InputDouble("Sigma", &sigma, 0.0, 0.0, "%e"))
+				if (ImGui::InputDouble("Sigma", &sigma, 0.0, 0.0, "%e") && ImGui::IsItemDeactivatedAfterEdit())
 					sigma = sigma < 0.0 ? 1.0 : sigma;
 
 
 				ch.mcConfig = { (size_t)n, (size_t)saveN, sigma };
 
-				if (ch.mcConfig != ch.savedMCConfig) {
+				if (col) {
 					ImGui::PopStyleColor();
 				}
 			}
@@ -129,28 +140,51 @@ namespace JFMApp::Views {
 
 			//Bounds
 			{
+				bool col = false;
 				if (ch.bounds != ch.savedBounds) {
 					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0, 0.0, 0.0, 1.0));
+					col = true;
 				}
 
 				ImGui::Checkbox("Use bounds", &ch.useBounds);
+				if (ImGui::BeginTable("Bounds", 3, tableFlags & ~ImGuiTableFlags_BordersInner)) {
+					ImGui::TableNextRow();
+					auto& params = nConf->modelParameters[ch.modelID];
+					auto& bounds = nConf->paramBounds;
+					for (auto& id : params) {
+						double min = bounds[id].first;
+						double max = bounds[id].second;
 
-				for (auto& [id, bounds] : ch.bounds) {
-					double min = bounds.first;
-					double max = bounds.second;
+						std::string minName = "##min" + nConf->parameters[id];
 
+						ImGui::TableNextColumn();
+						ImGui::Text(nConf->parameters[id].c_str());
+						ImGui::TableNextColumn();
 
-					if (ImGui::InputDouble(nConf->parameters[id].c_str(), &min, 0.0, 0.0, "%e"))
-						min = std::clamp(min, nConf->paramBounds[id].first, max);
+						ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x);
+						if (ImGui::InputDouble(minName.c_str(), &min, 0.0, 0.0, "%e"))
+							min = std::clamp(min, nConf->paramBounds[id].first, max);
+						
+						ImGui::PopItemWidth();
 
-					ImGui::SameLine();
-					if (ImGui::InputDouble(nConf->parameters[id].c_str(), &max, 0.0, 0.0, "%e"))
-						max = std::clamp(max, min, nConf->paramBounds[id].second);
+						
+						std::string maxName = "##max" + nConf->parameters[id];
 
+						ImGui::TableNextColumn();
+						ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x);
+						if (ImGui::InputDouble(maxName.c_str(), &max, 0.0, 0.0, "%e"))
+							max = std::clamp(max, min, nConf->paramBounds[id].second);
+
+						ImGui::PopItemWidth();
+
+					}
+
+					ImGui::EndTable();
 				}
+				
 
 
-				if (ch.bounds != ch.savedBounds) {
+				if (col) {
 					ImGui::PopStyleColor();
 				}
 			}
@@ -167,74 +201,67 @@ namespace JFMApp::Views {
 		}
 
 		ImVec2 tableSize = ImVec2(ImGui::GetContentRegionAvail().x, 0.0);
-		ImGuiTableFlags tableFlags = ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersOuter | ImGuiTableFlags_BordersInner;
+		ImGuiTableFlags tableFlags = ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersOuter | ImGuiTableFlags_BordersInner | ImGuiTableFlags_SizingStretchProp;
 
-		if (ImGui::BeginTable("Global config", 3, tableFlags, tableSize)) {
+		if (ImGui::BeginTable("Global config", 2, tableFlags, tableSize)) {
 			ImGui::TableSetupColumn("Fixed parameters");
-			ImGui::TableSetupColumn("Initial Values");
 			ImGui::TableSetupColumn("Model");
 
 			ImGui::TableHeadersRow();
 
 			ImGui::TableNextRow();
-
+			ImGui::TableNextColumn();
 			//Fixed parameters
 			{
 
+				bool col = false;
 				if (data.globalFixedParameterIDs != data.savedGlobalFixedParameterIDs) {
 					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0, 0.0, 0.0, 1.0));
+					col = true;
 				}
 
-				int columns = std::min(3, (int)data.globalFixedParameterIDs.size());
 
-				if (ImGui::BeginTable("Fix Params", columns, tableFlags & ~ImGuiTableFlags_BordersInner)) {
+				int columns = std::max(3, (int)data.globalFixedParameterIDs.size());
+
+				if (ImGui::BeginTable("Fix Params", 1, tableFlags & ~ImGuiTableFlags_BordersInner)) {
 					ImGui::TableNextRow();
-					for (auto& [key, val] : data.globalFixedParameterIDs) {
-						ImGui::Checkbox(data.paramConfig->parameters[key].c_str(), &val);
+					auto& params = data.paramConfig->modelParameters[data.globalModelID];
+					for (auto& key : params) {
 						ImGui::TableNextColumn();
+						ImGui::Checkbox(data.paramConfig->parameters[key].c_str(), &data.globalFixedParameterIDs[key]);
 					}
 
 					ImGui::EndTable();
 				}
 
-				if (data.globalFixedParameterIDs != data.savedGlobalFixedParameterIDs) {
+				if (col) {
 					ImGui::PopStyleColor();
 				}
 
 			}
 
-			ImGui::TableNextColumn();
-
-			//Initial values
-			{
-				ImGui::BeginDisabled();
-
-				bool u{ false };
-
-				ImGui::Checkbox("Use initial guess", &u);
-				for (auto& [key, val] : data.paramConfig->parameters) {
-					double z = 0.0;
-					ImGui::InputDouble(val.c_str(), &z, 0.0, 0.0, "%e");
-				}
-
-				ImGui::EndDisabled();
-			}
 
 			ImGui::TableNextColumn();
 
 			//Model
 			{
+				bool col = false;
 				if (data.globalModelID != data.savedGlobalModelID) {
 					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0, 0.0, 0.0, 1.0));
+					col = true;
 				}
-
-				for (auto& [id, name] : data.paramConfig->models) {
-					if (ImGui::Selectable(name.c_str(), id == data.globalModelID)) {
-						data.globalModelID = id;
+				if (ImGui::BeginCombo("##Model", data.paramConfig->models[data.globalModelID].c_str(), ImGuiComboFlags_WidthFitPreview)) {
+					for (auto& [id, name] : data.paramConfig->models) {
+						if (ImGui::Selectable(name.c_str(), id == data.globalModelID)) {
+							data.globalModelID = id;
+						}
 					}
-				}
 
-				if (data.globalModelID != data.savedGlobalModelID) {
+					ImGui::EndCombo();
+				}
+				
+
+				if (col) {
 					ImGui::PopStyleColor();
 				}
 			}
@@ -242,18 +269,19 @@ namespace JFMApp::Views {
 			ImGui::EndTable();
 		}
 
-		if (ImGui::BeginTable("MCConfig", 2, tableFlags, tableSize)) {
+		if (ImGui::BeginTable("MCConfig", 1, tableFlags, tableSize)) {
 			ImGui::TableSetupColumn("MC Config");
-			ImGui::TableSetupColumn("Bounds");
 
 			ImGui::TableHeadersRow();
 
 			ImGui::TableNextRow();
-
+			ImGui::TableNextColumn();
 			//MC config
 			{
+				bool col = false;
 				if (data.globalMCConfig != data.savedGlobalMCConfig) {
 					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0, 0.0, 0.0, 1.0));
+					col = true;
 				}
 
 				int n = data.globalMCConfig.n;
@@ -261,43 +289,20 @@ namespace JFMApp::Views {
 				double sigma = data.globalMCConfig.sigma;
 
 				if (ImGui::InputInt("N", &n))
-					n = std::max(1, n);
+					n = std::max(0, n);
 
 				if (ImGui::InputInt("Save N", &saveN))
-					saveN = std::max(1, saveN);
+					saveN = std::max(0, saveN);
 
-				if (ImGui::InputDouble("Sigma", &sigma, 0.0, 0.0, "%e"))
+				if (ImGui::InputDouble("Sigma", &sigma, 0.0, 0.0, "%e") && ImGui::IsItemDeactivatedAfterEdit())
 					sigma = sigma < 0.0 ? 1.0 : sigma;
 
 
 				data.globalMCConfig = { (size_t)n, (size_t)saveN, sigma };
 
-				if (data.globalMCConfig != data.savedGlobalMCConfig) {
+				if (col) {
 					ImGui::PopStyleColor();
 				}
-			}
-
-			ImGui::TableNextColumn();
-
-			//Bounds
-			{
-				ImGui::BeginDisabled();
-
-				bool u{ false };
-				ImGui::Checkbox("Use bounds", &u);
-
-				for (auto& [id, name] : data.paramConfig->parameters) {
-
-					double val{ 0.0 };
-
-					ImGui::InputDouble(name.c_str(), &val, 0.0, 0.0, "%e");
-
-					ImGui::SameLine();
-					ImGui::InputDouble(name.c_str(), &val, 0.0, 0.0, "%e");
-				}
-
-
-				ImGui::EndDisabled();
 			}
 
 			ImGui::EndTable();
@@ -315,77 +320,85 @@ namespace JFMApp::Views {
 		ImGui::Checkbox("Select All", &data.configAll);
 
 		ImVec2 inspectorSize = ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y * 0.9f);
+		ImGuiChildFlags cFlags = ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeY;
+		ImGui::BeginChild("CharacteristicInspector", inspectorSize, cFlags);
 
 		if (data.configAll) {
 			drawGlobalConfig(data);
 		}
-		else if (ImGui::BeginChild("CharacteristicInspector", inspectorSize)) {
+		else {
 
 
 			for (auto& ch : *(data.characteristics)) {
-				ImGui::CollapsingHeader(ch.name.c_str());
-				drawCharacteristicConfig(ch, data.paramConfig);
+				if (ch.checked && ImGui::CollapsingHeader(ch.name.c_str()))
+					drawCharacteristicConfig(ch, data.paramConfig);
 			}
 
-			ImGui::EndChild();
+
 		}
 
-
-
-
-		if (ImGui::Button("Update")) {
-			if (data.configAll) {
-				data.savedGlobalFixedParameterIDs = data.globalFixedParameterIDs;
-				data.savedGlobalModelID = data.globalModelID;
-				data.savedGlobalMCConfig = data.globalMCConfig;
-			}
-			else {
-				for (auto& ch : *(data.characteristics)) {
-					ch.savedBounds = ch.bounds;
-					ch.savedFixedParameterIDs = ch.fixedParameterIDs;
-					ch.savedFixedParametersValues = ch.fixedParametersValues;
-					ch.savedInitialGuess = ch.initialGuess;
-					ch.savedMCConfig = ch.mcConfig;
-					ch.savedModelID = ch.modelID;
-					ch.savedUseBounds = ch.useBounds;
-					ch.savedUseInitial = ch.useInitial;
+		{
+			if (ImGui::Button("Update")) {
+				if (data.configAll) {
+					data.savedGlobalFixedParameterIDs = data.globalFixedParameterIDs;
+					data.savedGlobalModelID = data.globalModelID;
+					data.savedGlobalMCConfig = data.globalMCConfig;
+				}
+				else {
+					for (auto& ch : *(data.characteristics)) {
+						ch.savedBounds = ch.bounds;
+						ch.savedFixedParameterIDs = ch.fixedParameterIDs;
+						ch.savedFixedParametersValues = ch.fixedParametersValues;
+						ch.savedInitialGuess = ch.initialGuess;
+						ch.savedMCConfig = ch.mcConfig;
+						ch.savedModelID = ch.modelID;
+						ch.savedUseBounds = ch.useBounds;
+						ch.savedUseInitial = ch.useInitial;
+					}
 				}
 			}
-		}
 
-		ImGui::SameLine();
+			ImGui::SameLine();
 
-		if (ImGui::Button("Restore")) {
-			if (data.configAll) {
-				data.globalFixedParameterIDs = data.savedGlobalFixedParameterIDs;
-				data.globalModelID = data.savedGlobalModelID;
-				data.globalMCConfig = data.savedGlobalMCConfig;
-			}
-			else {
-				for (auto& ch : *(data.characteristics)) {
-					ch.bounds = ch.savedBounds;
-					ch.fixedParameterIDs = ch.savedFixedParameterIDs;
-					ch.fixedParametersValues = ch.savedFixedParametersValues;
-					ch.initialGuess = ch.savedInitialGuess;
-					ch.mcConfig = ch.savedMCConfig;
-					ch.modelID = ch.savedModelID;
-					ch.useBounds = ch.savedUseBounds;
-					ch.useInitial = ch.savedUseInitial;
+			if (ImGui::Button("Restore")) {
+				if (data.configAll) {
+					data.globalFixedParameterIDs = data.savedGlobalFixedParameterIDs;
+					data.globalModelID = data.savedGlobalModelID;
+					data.globalMCConfig = data.savedGlobalMCConfig;
+				}
+				else {
+					for (auto& ch : *(data.characteristics)) {
+						ch.bounds = ch.savedBounds;
+						ch.fixedParameterIDs = ch.savedFixedParameterIDs;
+						ch.fixedParametersValues = ch.savedFixedParametersValues;
+						ch.initialGuess = ch.savedInitialGuess;
+						ch.mcConfig = ch.savedMCConfig;
+						ch.modelID = ch.savedModelID;
+						ch.useBounds = ch.savedUseBounds;
+						ch.useInitial = ch.savedUseInitial;
+					}
 				}
 			}
+
+			ImGui::SameLine();
+
+			if (ImGui::Button("Save MC config")) {
+				data.m_saveMCConfCallback();
+			}
+
+			if (!data.configAll && ImGui::Button("Perform MC on active")) {
+				data.m_performMCCallback();
+			}
+			else if (data.configAll && ImGui::Button("Perform MC on all")) {
+				data.m_performMCOnAllCallback();
+			}
 		}
 
-		ImGui::SameLine();
+		ImGui::EndChild();
 
-		if (ImGui::Button("Save MC config")) {
-			data.m_saveMCConfCallback();
-		}
 
-		if (!data.configAll && ImGui::Button("Perform MC on active")) {
-			data.m_performMCCallback();
-		} else if(data.configAll && ImGui::Button("Perform MC on all")) {
-			data.m_performMCOnAllCallback();
-		}
+
+
 
 	}
 };

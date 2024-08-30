@@ -13,6 +13,7 @@ project "JFMServices"
 
     includedirs {
         "%{prj.location}/**",
+        "%{prj.location}",
         "%{wks.location}/Vendor/NumericStorm/NumericStorm/headers/**",
         "%{wks.location}/Vendor/LambertW",
         "%{wks.location}/Vendor/yaml-cpp/include",

@@ -38,24 +38,25 @@ namespace JFMApp::Views {
 	}
 
 	static void drawPlot(Data::PlotData::MCPlotsData& mc, Data::NumericsConfig& nConf) {
-		if (!mc.characteristic) return;
-		ImGui::ColorPicker4("Sigma 1", &mc.sig[0].x, ImGuiColorEditFlags_NoInputs);
+		if (!mc.mc) return;
+		ImGui::ColorEdit4("Sigma 1", &mc.sig[0].x, ImGuiColorEditFlags_NoInputs);
 		ImGui::SameLine();
-		ImGui::ColorPicker4("Sigma 2", &mc.sig[1].x, ImGuiColorEditFlags_NoInputs);
+		ImGui::ColorEdit4("Sigma 2", &mc.sig[1].x, ImGuiColorEditFlags_NoInputs);
 		ImGui::SameLine();
-		ImGui::ColorPicker4("Sigma 3", &mc.sig[2].x, ImGuiColorEditFlags_NoInputs);
+		ImGui::ColorEdit4("Sigma 3", &mc.sig[2].x, ImGuiColorEditFlags_NoInputs);
 
 		ImGui::SameLine(0.0f, 20.0f);
 
 		std::string& prX = nConf.parameters[mc.parameters.first];
 
-		auto& params = nConf.modelParameters[mc.characteristic->modelID];
-
+		const auto& params = nConf.modelParameters[mc.mc->parent->modelID];
+		ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.25f);
 		if (ImGui::BeginCombo("X", prX.c_str())) {
 
-			for (auto& param : params) {
+			for (const auto& param : params) {
 				if (param != mc.parameters.second)
-					ImGui::Selectable(nConf.parameters[param].c_str(), param == mc.parameters.first);
+					if (ImGui::Selectable(nConf.parameters[param].c_str(), param == mc.parameters.first))
+						mc.parameters.first = param;
 			}
 
 			ImGui::EndCombo();
@@ -69,20 +70,22 @@ namespace JFMApp::Views {
 
 			for (auto& param : params) {
 				if (param != mc.parameters.first)
-					ImGui::Selectable(nConf.parameters[param].c_str(), param == mc.parameters.second);
+					if (ImGui::Selectable(nConf.parameters[param].c_str(), param == mc.parameters.second))
+						mc.parameters.second = param;
 			}
 
 			ImGui::EndCombo();
 		}
-
+		ImGui::PopItemWidth();
 
 		ImVec2 plotAreaSize = ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y);
 		if (ImPlot::BeginPlot(mc.name.c_str(), plotAreaSize, Data::PlotData::plotSettings.flags)) {
 
 			ImPlot::SetupAxes(prX.c_str(), prY.c_str(), Data::PlotData::plotSettings.xFlags, Data::PlotData::plotSettings.yFlags);
 
-			for (auto& d : mc.mc) {
-				ImPlot::SetNextLineStyle(mc.sig[getMCColor(d.error, d.fixConfig.size())]);
+			for (auto& d : mc.mc->data) {
+				ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, -1, mc.sig[getMCColor(d.error, mc.mc->fixConfig.size())], -1.0f, mc.sig[getMCColor(d.error, mc.mc->fixConfig.size())]);
+
 				ImPlot::PlotScatter("MC", &d.parameters[mc.parameters.first], &d.parameters[mc.parameters.second], 1);
 			}
 
@@ -104,20 +107,21 @@ namespace JFMApp::Views {
 
 
 			if (ImGui::TabItemButton("Add", ImGuiTabItemFlags_Trailing | ImGuiTabItemFlags_NoTooltip)) {
-
+				data.mcTabs.push_back(data.mcTabs.back() + 1);
 			}
-
+			int activeTab = data.mcTabs[0];
 			for (auto& tab : data.mcTabs) {
-				std::string name = "MC group" + std::to_string(tab);
+				std::string name = "MC group " + std::to_string(tab);
 				if (ImGui::BeginTabItem(name.c_str(), nullptr, ImGuiTabItemFlags_None))
 				{
-					ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.8f);
-					ImGui::BeginGroup();
-
+					activeTab = tab;
+					ImVec2 s = ImVec2(ImGui::GetContentRegionAvail().x * 0.8f, ImGui::GetContentRegionAvail().y);
+					ImGuiChildFlags cf = ImGuiChildFlags_Border;
+					ImGui::BeginChild("PlotsArea", s, cf);
 
 					{
 						auto& name = data.mcTempName;
-
+						ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.25f);
 						ImGui::InputTextWithHint("##Name", "Name",
 							(char*)name.c_str(),
 							name.capacity() + 1,
@@ -134,13 +138,15 @@ namespace JFMApp::Views {
 
 							std::string& prX = nConf.parameters[tempParams.first];
 
-							auto& params = nConf.modelParameters[data.activeMC->characteristic->modelID];
+
+							auto& params = nConf.modelParameters[mc.parent->modelID];
 
 							if (ImGui::BeginCombo("X", prX.c_str())) {
 
 								for (auto& param : params) {
 									if (param != tempParams.second)
-										ImGui::Selectable(nConf.parameters[param].c_str(), param == mc.parameters.first);
+										if (ImGui::Selectable(nConf.parameters[param].c_str(), param == data.mcTempParams.first))
+											data.mcTempParams.first = param;
 								}
 
 								ImGui::EndCombo();
@@ -154,7 +160,8 @@ namespace JFMApp::Views {
 
 								for (auto& param : params) {
 									if (param != tempParams.first)
-										ImGui::Selectable(nConf.parameters[param].c_str(), param == mc.parameters.second);
+										if (ImGui::Selectable(nConf.parameters[param].c_str(), param == data.mcTempParams.second))
+											data.mcTempParams.second = param;
 								}
 
 								ImGui::EndCombo();
@@ -163,19 +170,26 @@ namespace JFMApp::Views {
 
 						ImGui::SameLine();
 
-						bool cond = data.activeMC && data.activeMC->characteristic;
+						bool cond = data.activeMC;
 
 						auto str = std::find_if(data.mcPlots.begin(), data.mcPlots.end(), [&](const auto& mc) {
 							return mc.name == data.mcTempName;
 							});
 
-						if (str != data.mcPlots.end()) cond = false;
+						if (str != data.mcPlots.end() || data.mcTempName.size() == 0) cond = false;
 
 						if (!cond)
 							ImGui::BeginDisabled();
 
 						if (ImGui::Button("Add plot")) {
+							Data::PlotData::MCPlotsData mcData{};
 
+							mcData.name = data.mcTempName;
+							mcData.parameters = data.mcTempParams;
+							mcData.mc = data.activeMC;
+							mcData.tab = tab;
+
+							data.mcPlots.push_back(mcData);
 						}
 
 						if (!cond)
@@ -183,50 +197,64 @@ namespace JFMApp::Views {
 
 
 					}
-
+					ImGui::PopItemWidth();
 					//dockspace
 					{
 
 						ImGuiChildFlags window_flags = ImGuiChildFlags_Border;
 
 						ImVec2 child_size = ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y);
+						std::string dName = "##tabDock" + std::to_string(tab);
+						ImGui::BeginChild(dName.c_str(), child_size);
 
-						ImGui::BeginChild("##dockspace", child_size);
-
-						ImGuiID dockspace_id = ImGui::GetID(tab + 1);
+						ImGuiID dockspace_id = tab + 1;
 						ImGui::DockSpace(dockspace_id, child_size, ImGuiDockNodeFlags_None);
 
 						ImGui::EndChild();
 					}
 
-					ImGui::EndGroup();
+					ImGui::EndChild();
 
-					ImGui::PopItemWidth();
+
 
 					ImGui::SameLine();
 
 					{
-						ImVec2 listSize = ImVec2(ImGui::GetContentRegionAvail().x * 0.2f, ImGui::GetContentRegionAvail().y);
+						ImVec2 listSize = ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y);
 
-						if (ImGui::BeginListBox("List", listSize) && data.characteristics) {
+						if (ImGui::BeginListBox("##List", listSize) && data.characteristics) {
 							for (auto& ch : *(data.characteristics)) {
 								if (!ch.checked) continue;
+								ch.mcMutex->lock();
+
 
 								ImGui::Text(ch.name.c_str());
 								ImGui::Separator();
 
-								for (auto& mc : data.mcPlots) {
-									if (mc.characteristic == &ch && ImGui::Selectable(ch.name.c_str(), data.activeMC == &mc)) {
+								for (auto& mc : ch.mcData) {
+									if (ImGui::Selectable(ch.name.c_str(), data.activeMC == &mc)) {
 										data.activeMC = &mc;
 
 										auto& tempParams = data.mcTempParams;
 
-										tempParams.first = nConf.modelParameters[mc.characteristic->modelID][0];
-										tempParams.second = nConf.modelParameters[mc.characteristic->modelID][1];
+										tempParams.first = nConf.modelParameters[ch.modelID][0];
+										tempParams.second = nConf.modelParameters[ch.modelID][1];
+									}
+									ImGui::Text("Noise: ");
+									ImGui::SameLine();
+									ImGui::Text(std::to_string(mc.sigma).c_str());
+									ImGui::Separator();
+									for (auto& [key, value] : mc.fixConfig) {
+										ImGui::Text(nConf.parameters[key].c_str());
+										ImGui::SameLine();
+										ImGui::Text(": ");
+										ImGui::SameLine();
+										ImGui::Text(std::to_string(value).c_str());
 									}
 
 								}
 
+								ch.mcMutex->unlock();
 							}
 							ImGui::EndListBox();
 						}
@@ -234,31 +262,40 @@ namespace JFMApp::Views {
 
 					ImGui::EndTabItem();
 				}
-				else {
+
+
+			}
+
+
+			{
+				for (auto tab : data.mcTabs) {
+					if (tab == activeTab) continue;
 					ImGuiChildFlags child_flags = ImGuiChildFlags_Border;
 					ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoCollapse;
 
 					ImVec2 child_size = ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y);
+					std::string dName = "##tabDockHidden" + std::to_string(tab);
+					//ImGui::BeginChild(dName.c_str(), child_size, child_flags, window_flags);
 
-					ImGui::BeginChild("##dockspace", child_size, child_flags, window_flags);
-
-					ImGuiID dockspace_id = ImGui::GetID(tab + 1);
+					ImGuiID dockspace_id = tab + 1;
 					ImGui::DockSpace(dockspace_id, child_size, ImGuiDockNodeFlags_KeepAliveOnly);
 
-					ImGui::EndChild();
-				}
-
-				{
-					for (auto& mc : data.mcPlots) {
-						if (mc.tab == tab) {
-							ImGui::SetNextWindowDockID(ImGui::GetID(tab + 1), ImGuiCond_FirstUseEver);
-							ImGui::Begin(mc.name.c_str(), nullptr, ImGuiWindowFlags_NoCollapse);
-								drawPlot(mc, nConf);
-							ImGui::End();
-						}
-					}
+					//ImGui::EndChild();
 				}
 			}
+
+			{
+				for (auto& mc : data.mcPlots) {
+
+
+					ImGui::SetNextWindowDockID(mc.tab + 1, ImGuiCond_Once);
+					ImGui::Begin(mc.name.c_str(), nullptr, ImGuiWindowFlags_NoCollapse);
+					drawPlot(mc, nConf);
+					ImGui::End();
+
+				}
+			}
+
 
 			ImGui::EndTabBar();
 		}

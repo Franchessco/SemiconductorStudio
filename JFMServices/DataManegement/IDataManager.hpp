@@ -31,6 +31,7 @@ namespace JFMService::DataManagementService
 
     class IDataManager
     {
+        public:
         using Callback = std::function<void(LoaderOutput)>;
         using VectorCallback = std::function<void(std::vector<LoaderOutput>)>; // todo change this type to be more suitable
         using path = std::filesystem::path;
