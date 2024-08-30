@@ -5,6 +5,8 @@
 #include "IFitting.hpp"
 #include "IDataManager.hpp"
 
+#include "Widgets.hpp"
+
 namespace JFMApp {
 
 	struct AppServiceBundle {
@@ -31,6 +33,10 @@ namespace JFMApp {
 		void draw();
 
 	private:
+		void setUpCallbacks();
+
+	private:
+		std::mutex m_charMutex{};
 		Data::ViewData m_state{};
 		std::shared_ptr<JFMService::FittingService::IFitting> m_numerics{};
 		std::shared_ptr<JFMService::DataManagementService::IDataManager> m_dataLoader{};

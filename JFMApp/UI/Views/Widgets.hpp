@@ -21,5 +21,7 @@ namespace JFMApp::Views {
 		static void GenerateData();
 
 		static void global_ds();
+
+		static inline ImGuiID mDS;
 	};
 }

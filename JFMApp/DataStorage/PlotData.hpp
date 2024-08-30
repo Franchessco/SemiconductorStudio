@@ -7,6 +7,9 @@ namespace JFMApp::Data
 {
 	struct PlotData
 	{
+
+		void submitMC(const MCOutput& mcData, Characteristic& ch);
+
 		//references to the selected characteristics
 		//plot options
 		//--scale
@@ -36,12 +39,11 @@ namespace JFMApp::Data
 		NumericsConfig* paramConfig{ nullptr };
 
 		struct MCPlotsData {
-			std::vector<Characteristic::MCData> mc{};
-			Data::Characteristic* characteristic{ nullptr };
+			Characteristic::MCSimulation* mc{};
 			std::array<ImVec4, 3> sig{ ImVec4{ 0.0f, 1.0f, 0.0f, 1.0f }, ImVec4{ 1.0f, 1.0f, 0.0f, 1.0f }, ImVec4{ 1.0f, 0.0f, 0.0f, 1.0f } };
 			std::pair<ParameterID, ParameterID> parameters{};
 			std::string name{};
-			int tab{ 0 };
+			int tab{ -1 };
 		};
 
 		std::vector<MCPlotsData> mcPlots{};
@@ -51,7 +53,7 @@ namespace JFMApp::Data
 
 		ImVector<unsigned int> mcTabs{};
 
-		MCPlotsData* activeMC{ nullptr };
+		Characteristic::MCSimulation* activeMC{ nullptr };
 
 		bool configAll{ false };
 
@@ -69,16 +71,19 @@ namespace JFMApp::Data
 		std::function<void()> m_estimateCallback{};
 		std::function<void()> m_fitCallback{};
 		std::function<void()> m_tuneCallback{};
+
 		std::function<void()> m_saveMCConfCallback{};
 		std::function<void()> m_performMCCallback{};
 		std::function<void()> m_performMCOnAllCallback{};
 
 
-		static struct PlotSettings {
+		struct PlotSettings {
 			ImPlotFlags flags = ImPlotFlags_NoLegend;
 			ImPlotAxisFlags xFlags = ImPlotAxisFlags_None;
 			ImPlotAxisFlags yFlags = ImPlotAxisFlags_None;
-		} plotSettings;
+		};
+
+		static inline PlotSettings plotSettings;
 	};
 }
 

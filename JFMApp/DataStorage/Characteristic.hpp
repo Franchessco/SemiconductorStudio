@@ -3,14 +3,39 @@
 #include "pch.hpp"
 
 #include "NumericsConfig.hpp"
+#include "IDataManager.hpp"
 #include "imgui.h"
 
 #include "implot.h"
 
 namespace JFMApp::Data {
+	using namespace JFMService::DataManagementService;
+	
 
 	struct Characteristic
 	{
+
+		Characteristic() {
+			initState();
+		}
+		Characteristic(const Characteristic&) = default;
+		Characteristic(Characteristic&&) = default;
+		Characteristic& operator=(const Characteristic&) = default;
+		Characteristic& operator=(Characteristic&&) = default;
+		~Characteristic() = default;
+
+		Characteristic(const CharacteristicData& loaded);
+
+		EstimateInput getEstimateInput();
+		FittingInput getFittingInput();
+		void submitFitting(const ParameterMap& parameters, double error);
+		CalculatingData getCalculatingData();
+		CalculatingData getTuningData();
+		MCInput getMCConfig();
+		void submitMC(const MCOutput& mcData);
+
+		void initState();
+
 		//containers of V, I, J
 		//temperature
 		//name
@@ -33,7 +58,10 @@ namespace JFMApp::Data {
 
 		double T{};
 
-		std::pair<size_t, size_t> dataRange{};
+		//instead of ECS
+		std::filesystem::path path{};
+
+		std::pair<size_t, size_t> dataRange{0, 1};
 		bool isFitted{ false };
 		bool isSimulated{ false };
 		bool checked{ false };
@@ -48,12 +76,18 @@ namespace JFMApp::Data {
 		struct MCData {
 			ParameterMap parameters{};
 			double error{ -1.0 };
-			ParameterMap fixConfig{};
 		};
-		
+
+		struct MCSimulation {
+			std::vector<MCData> data{};
+			ParameterMap fixConfig{};
+			double sigma{ 1.0 };
+			Characteristic* parent{ nullptr };
+		};
+
+		std::vector<MCSimulation> mcData{};
 
 		
-
 
 		//fitted
 		ParameterMap fittedParameters{};
@@ -61,7 +95,7 @@ namespace JFMApp::Data {
 
 		double fitError{ -1.0 };
 
-		std::function<void()> m_tuneCallback{};
+
 
 		//tuned
 		std::vector<double> tunedI{};
@@ -70,7 +104,7 @@ namespace JFMApp::Data {
 
 		double tuneError{ -1.0 };
 
-
+		std::function<void()> m_tuneCallback{};
 
 
 
@@ -79,10 +113,11 @@ namespace JFMApp::Data {
 		std::unordered_map<ParameterID, bool> fixedParameterIDs{};
 		ParameterMap fixedParametersValues{};
 		ParameterMap initialGuess{};
+
 		struct MCConfig {
 			size_t n{};
 			size_t saveN{};
-			double sigma{};
+			double sigma{ 1.0 };
 
 			std::partial_ordering operator<=>(const MCConfig&) const = default;
 
@@ -106,6 +141,8 @@ namespace JFMApp::Data {
 
 		std::string savedNotes{};
 
+		std::shared_ptr<std::mutex> mcMutex{ nullptr };
+
 
 		static double TFL(double v, void*) {
 			return std::log(std::max(v, std::numeric_limits<double>::epsilon()));
@@ -115,6 +152,9 @@ namespace JFMApp::Data {
 			return std::exp(v);
 		}
 	};
+
+	
+
 };
 
 

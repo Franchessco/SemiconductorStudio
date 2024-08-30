@@ -25,6 +25,7 @@ namespace JFMApp {
 				app->update();
 
 				JFMApp::Views::Widgets::global_ds();
+				
 				app->draw();
 			}
 

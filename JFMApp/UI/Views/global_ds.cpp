@@ -8,7 +8,7 @@ namespace JFMApp::Views {
 
 		ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
 
-		ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), dockspace_flags);
+		mDS = ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), dockspace_flags);
 
 		/*ImGuiWindowFlags window_flags = 0;
 		window_flags |= ImGuiWindowFlags_NoTitleBar;

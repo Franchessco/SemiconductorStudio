@@ -9,7 +9,7 @@ namespace JFMApp::Data
 		bool m_showPlottingArea{ true },
 			m_showBrowserArea{ true }, 
 			m_showCharacteristicInspector{ true }, 
-			m_showMonteCarloInspector{ true };
+			m_showMonteCarloInspector{ false };
 
 		
 	};

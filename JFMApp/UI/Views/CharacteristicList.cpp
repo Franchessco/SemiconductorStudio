@@ -6,13 +6,16 @@ namespace JFMApp::Views {
 
 	void Widgets::CharacteristicList(Data::BrowserData& data) {
 
-		ImGui::BeginGroup();
+
+		ImGuiChildFlags cf = ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_Border;
+
+		ImGui::BeginChild("CListWin", ImVec2{ 0.0f, 0.0f }, cf);
 
 		//control buttons
 		{
-			ImGui::ColorPicker4("Start Color", &data.startColor.x, ImGuiColorEditFlags_NoInputs);
+			ImGui::ColorEdit4("Start Color", &data.startColor.x, ImGuiColorEditFlags_NoInputs);
 			ImGui::SameLine();
-			ImGui::ColorPicker4("End Color", &data.endColor.x, ImGuiColorEditFlags_NoInputs);
+			ImGui::ColorEdit4("End Color", &data.endColor.x, ImGuiColorEditFlags_NoInputs);
 
 			ImGui::SameLine(0.0f, 20.0f);
 
@@ -33,11 +36,11 @@ namespace JFMApp::Views {
 			ImGui::BeginGroup();
 
 			if (ImGui::Button("Select all")) {
-				data.m_unselectAllCallback();
+				data.m_selectAllCallback();
 			}
 
 			if (ImGui::Button("Unselect all")) {
-
+				data.m_unselectAllCallback();
 			}
 
 			ImGui::EndGroup();
@@ -58,20 +61,20 @@ namespace JFMApp::Views {
 		}
 
 
-		ImGui::EndGroup();
+		ImGui::EndChild();
 
 		//characteristics list
 		{
 			auto* nConf = data.nConfig;
 
-			int param_size = 4 + nConf ? nConf->parameters.size() : 0;
+			int param_size = 4 + (nConf ? nConf->parameters.size() : 0);
 
-			ImGuiTableFlags flags = ImGuiTableFlags_BordersOuter | ImGuiTableFlags_Resizable;
-			ImVec2 size = ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y * 0.5f);
+			ImGuiTableFlags flags = ImGuiTableFlags_BordersOuter | ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingStretchProp;
+			ImVec2 size = ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y * 0.3f);
 
 			if (ImGui::BeginTable("Characteristics", param_size, flags, size)) {
 
-				ImGui::TabItemButton("Color");
+				ImGui::TableSetupColumn("Color");
 				ImGui::TableSetupColumn("Name");
 				ImGui::TableSetupColumn("Error");
 				ImGui::TableSetupColumn("T");
@@ -86,20 +89,21 @@ namespace JFMApp::Views {
 				int id = 0;
 				for (auto& ch : data.m_characteristics) {
 					ImGui::TableNextRow();
-
+					ImGui::TableNextColumn();
 					ImGui::PushID(id++);
 					ImGui::ColorEdit4("", &ch.color.x, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
 					ImGui::PopID();
 
 
+					
+
 					ImGui::TableNextColumn();
+					ImGui::Checkbox(ch.name.c_str(), &ch.checked);
+
 					if (ImGui::IsItemHovered())
 						ch.weight = 2.0f;
 					else
 						ch.weight = 1.0f;
-
-					ImGui::TableNextColumn();
-					ImGui::Checkbox(ch.name.c_str(), &ch.checked);
 
 
 					ImGui::TableNextColumn();
@@ -115,6 +119,8 @@ namespace JFMApp::Views {
 							std::string value = ch.fittedParameters.contains(key) ? std::to_string(ch.fittedParameters[key]) : "-";
 							ImGui::Text(value.c_str());
 						}
+
+
 				}
 
 				ImGui::EndTable();
