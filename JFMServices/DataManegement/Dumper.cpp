@@ -37,11 +37,15 @@ namespace JFMService
     {
         MCOutput data = *(toSave).mcData;
         YAML::Emitter out;
-
+        //out<< YAML::BeginMap << YAML::Key << "general" << YAML::Value;
         emitConfig(out, data.inputData);
         emitMCSimulation(out, data.mcResult);
+        //out << YAML::EndMap;
         std::ofstream output(path);
         output << out.c_str();
+        //LoaderOutput toCallback(toSave);
+        //if (callback)
+        //    callback(toCallback);
     };
 
     void MonteCarloResultDumper::Save(const std::vector<path> &path, const std::vector<LoaderOutput> &toSave, const VectorCallback &callback)
@@ -49,10 +53,13 @@ namespace JFMService
     }
     void MonteCarloResultDumper::emitConfig(YAML::Emitter &emitter, const MCInput &toEmit)
     {
+        
+        emitter << YAML::BeginMap;
+        emitter << YAML::Key << "config" << YAML::Value;
         emitter << YAML::BeginMap;
 
         emitter << YAML::Key << "model" << YAML::Value << transferModelIDToString(toEmit.startingData.initialData.modelID);
-        emitter << YAML::Key << "relativePath" << YAML::Value << toEmit.relPath.c_str();
+        emitter << YAML::Key << "relativePath" << YAML::Value << toEmit.relPath.string();
         emitter << YAML::Key << "CharacteristicName" << YAML::Value << std::string(toEmit.startingData.name);
         emitter << YAML::Key << "idealParameters" << YAML::Value << YAML::BeginSeq;
         serializeParameters(emitter, toEmit.trueParameters);
@@ -63,7 +70,7 @@ namespace JFMService
         for (const auto [id, val] : toEmit.startingData.fixConfig)
             emitter << parameterIdToString((Fitters::ParameterID)id);
         emitter << YAML::EndSeq;
-        emitter << YAML::Key << "fixingValues" << YAML::BeginSeq;
+        emitter << YAML::Key << "fixedValues" << YAML::BeginSeq;
         for (const auto [id, val] : toEmit.startingData.fixConfig)
             emitter << val;
         emitter << YAML::EndSeq;
@@ -77,24 +84,31 @@ namespace JFMService
         emitter << YAML::EndSeq;
         emitter << YAML::Key << "noise" << YAML::Value << toEmit.noise;
         emitter << YAML::EndMap;
+        //emitter << YAML::EndMap;
     }
-    void MonteCarloResultDumper::emitMCSimulation(YAML::Emitter &emitter, const std::vector<MCResult> &simulation)
+    void MonteCarloResultDumper::emitMCSimulation(YAML::Emitter& emitter, const std::vector<MCResult>& simulation)
     {
         // data
-        emitter << YAML::BeginMap;
         emitter << YAML::Key << "data" << YAML::Value;
         emitter << YAML::BeginSeq;
-        for (const auto &result : simulation)
+        for (const auto& result : simulation)
         {
             // result
-            emitter << YAML::BeginMap << YAML::Key << "result";
+            emitter << YAML::BeginMap;
+
+            // parameters
+            emitter << YAML::Key << "result" << YAML::Value << YAML::BeginMap;
+            emitter << YAML::Key << "parameters";
             emitter << YAML::Value << YAML::BeginSeq;
             serializeParameters(emitter, result.foundParameters);
-            emitter << YAML::EndSeq;
-            emitter << YAML::Key << "error" << YAML::Value << result.error << YAML::EndMap;
-        }
+            emitter << YAML::EndSeq; // end of parameters sequence
 
-        emitter << YAML::EndSeq; // parameters
-        emitter << YAML::EndMap; // data
-    };
+            // error
+            emitter << YAML::Key << "error" << YAML::Value << result.error;
+            emitter << YAML::EndMap; // end of result map
+
+            emitter << YAML::EndMap; // end of each item in the sequence
+        }
+        emitter << YAML::EndSeq; // end of data sequence
+    }
 }

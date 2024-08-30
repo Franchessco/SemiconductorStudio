@@ -6,6 +6,8 @@ namespace JFMService
 	{
 		loaders[LoadingTypes::Characteristic] = std::make_shared<CharacteristicLoader>();
 		loaders[LoadingTypes::MonteCarloResult] = std::make_shared<MonteCarloResultLoader>();
+
+		dumpers[LoadingTypes::MonteCarloResult] = std::make_shared<MonteCarloResultDumper>();
 	}
 
 	void DataManager::Load(const path &path, const Callback &callback)
@@ -34,6 +36,8 @@ namespace JFMService
 
 	void DataManager::Save(const path &path, const LoaderOutput &input, const Callback &callback)
 	{
+		std::shared_ptr<Dumper> dumper = dumpers.at(findDumper(path));
+		dumper->Save(path, input, callback);
 	}
 
 	void DataManager::Save(const std::vector<path> &paths, const std::vector<LoaderOutput> &input, const VectorCallback &callbacks)
@@ -71,5 +75,9 @@ namespace JFMService
 			else
 				return loadingType;
 		}
+	}
+	LoadingTypes DataManager::findDumper(const std::filesystem::path &path)
+	{
+		return LoadingTypes::MonteCarloResult;
 	}
 }

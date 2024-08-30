@@ -3,6 +3,7 @@
 #include "utils.hpp"
 #include "IDataManager.hpp"
 #include "Loader.hpp"
+#include "Dumper.hpp"
 namespace JFMService
 {
     enum class LoadingTypes
@@ -31,11 +32,13 @@ namespace JFMService
 
     private:
         std::unordered_map<LoadingTypes, std::shared_ptr<Loader>> loaders;
+        std::unordered_map<LoadingTypes, std::shared_ptr<Dumper>> dumpers;
         bool useThreadsParallel{false};
         std::mutex mutex;
 
     private:
         LoadingTypes findLoader(const std::filesystem::path &path);
+        LoadingTypes findDumper(const std::filesystem::path& path);
     };
 
 }

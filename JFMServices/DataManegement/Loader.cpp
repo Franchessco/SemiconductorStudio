@@ -100,7 +100,8 @@ namespace JFMService
         loadConfig(config, inputToFitting);
         std::vector<ParameterName> order = config["order"].as<std::vector<ParameterName>>();
         loadedData.inputData = inputToFitting;
-        loadedData.mcResult = loadFittingResults(data["data"], order, inputToFitting.iterations);
+        auto d = data["data"];
+        loadedData.mcResult = loadFittingResults(d, order, inputToFitting.iterations);
 
         output.mcData = std::make_unique<FittingService::MCOutput>(loadedData);
         return output;
@@ -154,14 +155,15 @@ namespace JFMService
         auto transferArrayToMap = [&](std::vector<double> params)
         {
             ParameterMap parameters;
-            transferParameters(parameters, order, params);
+            transferParameters(parameters, {"A","I0","Rs","Rsh","alpha","Rsh2"}, params);
             return parameters;
         };
         std::vector<MCResult> result{size};
         MCResult singleResult;
         for (const auto &[item, dst] : std::views::zip(node, result))
         {
-            singleResult.foundParameters = transferArrayToMap(item["result"]["parameters"].as<std::vector<double>>());
+            auto i = item["result"]["parameters"].as<std::vector<double>>();
+            singleResult.foundParameters = transferArrayToMap(i);
             singleResult.error = item["result"]["error"].as<double>();
             dst = singleResult;
         }
