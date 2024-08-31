@@ -2,7 +2,7 @@
 
 #include "pch.hpp"
 
-#include "IFitting.hpp"
+#include "JFMIFitting.hpp"
 
 namespace JFMApp::Data
 {

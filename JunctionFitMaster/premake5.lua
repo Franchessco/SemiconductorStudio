@@ -50,7 +50,7 @@ project "JunctionFitMaster"
     filter { "system:windows" }
         ignoredefaultlibraries { "msvcrt" }
         -- links { "JFMApp", "JFMServices" }
-        links {  "JFMServices","yaml-cpp" }
+        links { "JFMApp", "JFMServices" }
 
 
     

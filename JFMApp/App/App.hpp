@@ -2,7 +2,7 @@
 
 #include "pch.hpp"
 #include "ViewData.hpp"
-#include "IFitting.hpp"
+#include "JFMIFitting.hpp"
 #include "IDataManager.hpp"
 
 #include "Widgets.hpp"

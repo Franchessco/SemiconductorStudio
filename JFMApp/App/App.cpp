@@ -194,7 +194,7 @@ namespace JFMApp {
 					}
 				}
 
-				m_dataLoader->load(paths, [&](std::vector<LoaderOutput> characteristics) {
+				m_dataLoader->Load(paths, [&](std::vector<LoaderOutput> characteristics) {
 
 
 					for (auto& c : characteristics) {
@@ -222,16 +222,17 @@ namespace JFMApp {
 
 							//range the data
 
-							temp.dataRange = m_numerics->RangeData({ temp.V, temp.I });
+							//temp.dataRange = m_numerics->RangeData({ temp.V, temp.I });
 
 							//estimate
 
-							auto eParams = m_numerics->Estimate(temp.getEstimateInput());
+							//auto eParams = m_numerics->Estimate(temp.getEstimateInput());
 
 							//fit
-
-							m_numerics->Fit(temp.getFittingInput(), [&](ParameterMap&& output) {
-								std::scoped_lock lk{ m_charMutex };
+							//std::scoped_lock lk{ m_charMutex };
+							m_state.browserData.m_characteristics.push_back(temp);
+							/*m_numerics->Fit(temp.getFittingInput(), [&](ParameterMap&& output) {
+								
 
 								CalculatingData cData = temp.getCalculatingData();
 								temp.fittedParameters = output;
@@ -241,8 +242,8 @@ namespace JFMApp {
 								double fitError = m_numerics->CalculateError(cData.characteristic.currentData, temp.getEstimateInput().characteristic.currentData);
 								temp.submitFitting(output, fitError);
 
-								m_state.browserData.m_characteristics.push_back(temp);
-								});
+								
+								});*/
 
 						}
 					}
@@ -262,7 +263,7 @@ namespace JFMApp {
 					}
 				}
 
-				m_dataLoader->load(paths, [&](std::vector<LoaderOutput> characteristics) {
+				m_dataLoader->Load(paths, [&](std::vector<LoaderOutput> characteristics) {
 
 
 					for (auto& c : characteristics) {
@@ -429,7 +430,7 @@ namespace JFMApp {
 					LoaderOutput lOut{};
 					lOut.mcData = std::make_unique<MCOutput>(std::move(out));
 
-					m_dataLoader->save(ch.path, lOut, [&](LoaderOutput out) {
+					m_dataLoader->Save(ch.path, lOut, [&](LoaderOutput out) {
 
 						});
 				}
@@ -457,7 +458,7 @@ namespace JFMApp {
 					if (!ch.checked) continue;
 					auto fInput = ch.getFittingInput();
 
-					fInput.modelID = m_state.plotData.savedGlobalModelID;
+					fInput.initialData.modelID = m_state.plotData.savedGlobalModelID;
 					fInput.name = ch.name;
 
 					ParameterMap fv{};

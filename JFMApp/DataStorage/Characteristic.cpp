@@ -30,7 +30,7 @@ namespace JFMApp::Data
 
 		//FIX this in the future - abstract parameters in the loading service
 		input.additionalParameters[0] = T;
-
+		input.modelID = savedModelID;
 		input.characteristic = { eV, eI };
 
 		return input;
@@ -40,7 +40,6 @@ namespace JFMApp::Data
 		FittingInput input{};
 
 		input.initialData = getEstimateInput();
-		input.modelID = savedModelID;
 		input.name = name;
 		input.fixConfig = savedFixedParametersValues;
 		for (auto& [id, val] : savedFixedParameterIDs) {
