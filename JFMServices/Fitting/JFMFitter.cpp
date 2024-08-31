@@ -8,41 +8,41 @@
 namespace JFMService::Fitters
 {
 	//! Abstract Fitter
-	template <size_t size>
-	IVFittingSetup<size> transferFittingSetUp(const FittingInput &input)
+	template <size_t parameter_size>
+	IVFittingSetup<parameter_size> transferFittingSetUp(const FittingInput &input)
 	{
-		IVFittingSetup<size> setUp;
+		IVFittingSetup<parameter_size> setUp;
 
 		ParameterMap initials = input.initialValues;
-		std::array<double, size> min, max;
+		std::array<double, parameter_size> min, max;
 
-		for (int index : std::ranges::iota_view(0, (int)(size + 1)))
+		for (int index : std::ranges::iota_view(0, (int)(parameter_size)))
 		{
-			min[index] = initials[(ParameterID)index] * 0.9;
-			max[index] = initials[(ParameterID)index] * 1.1;
+			min[index] = input.bounds.at((ParameterID)index).first;	 // * 0.9;
+			max[index] = input.bounds.at((ParameterID)index).second; // *1.1;
 		}
-		double power = std::floor(std::log10(min[(ParameterID)I0]));
-		min[I0] = std::pow(10, power);
-		max[I0] = 9 * std::pow(10, power);
+		// double power = std::floor(std::log10(min[(ParameterID)I0]));
+		// min[I0] = std::pow(10, power);
+		// max[I0] = 9 * std::pow(10, power);
 
 		setUp.simplexMin = min;
 		setUp.simplexMax = max;
 		return setUp;
 	}
-	template <size_t size>
-	NumericStorm::Fitting::Parameters<size> transferInitialPoint(const ParameterMap &initial)
+	template <size_t parameter_size>
+	NumericStorm::Fitting::Parameters<parameter_size> transferInitialPoint(const ParameterMap &initial)
 	{
-		NumericStorm::Fitting::Parameters<size> initialPoint;
-		for (auto index : std::ranges::iota_view(0, (int)(size + 1)))
+		NumericStorm::Fitting::Parameters<parameter_size> initialPoint;
+		for (auto index : std::ranges::iota_view(0, (int)(parameter_size)))
 			initialPoint[index] = initial.at((ParameterID)index);
 
 		return initialPoint;
 	}
-	template <class Model, size_t size>
-	SimplexOptimizationResults<size> fit(const IVFittingSetup<size> &setUp, const NumericStorm::Fitting::Parameters<size> &initialPoint, const Data &data, const JFMAdditionalParameters &additionalParameters)
+	template <class Model, size_t parameter_size>
+	SimplexOptimizationResults<parameter_size> fit(const IVFittingSetup<parameter_size> &setUp, const NumericStorm::Fitting::Parameters<parameter_size> &initialPoint, const Data &data, const JFMAdditionalParameters &additionalParameters)
 	{
 		using NSFitter = NumericStorm::Fitting::Fitter<IVSimplexOptimizer<Model>>;
-		NSFitter fitter = getFitter<Model, size>(setUp);
+		NSFitter fitter = getFitter<Model, parameter_size>(setUp);
 		return fitter.fit(initialPoint, data, additionalParameters);
 	}
 	Data transferFittingData(const PlotData &input)
@@ -73,17 +73,30 @@ namespace JFMService::Fitters
 	//! Four Parameter Fitter
 	void FourParameterFitter::Fit(const FittingInput &input, Callback callback)
 	{
+		auto checkRepetitionCondition = [&](const SimplexOptimizationResults<4> &result)
+		{
+			auto parameters = result.getParameters();
+			bool negativeValueParameters = std::ranges::any_of(parameters, [](double value)
+															   { return value < 0; });
+			bool bigError = result.getError() > 1;
+			return negativeValueParameters or bigError;
+		};
 		//! this can be rebuild and templated via model and number of parameters
 		IVFittingSetup<4> setUp = transferFittingSetUp<4>(input);
 		Data NSDdata = transferFittingData(input.initialData.characteristic);
 		JFMAdditionalParameters additionalParameters = transferAdditionalParameters(input.initialData.additionalParameters, input.fixConfig);
 		NumericStorm::Fitting::Parameters<4> initialPoint = transferInitialPoint<4>(input.initialValues);
+		SimplexOptimizationResults<4> results;
+		do
+		{
+			results = fit<FourParameterModel, 4>(setUp, initialPoint, NSDdata, additionalParameters);
+			initialPoint = results.getParameters();
+		} while (checkRepetitionCondition(results));
 
-		SimplexOptimizationResults<4> results = fit<FourParameterModel, 4>(setUp, initialPoint, NSDdata, additionalParameters);
 		ParameterMap fittingResult;
 
-		for (const auto &[dst, src, index] : std::views::zip(fittingResult, results.getParameters(), std::ranges::iota_view(0, 5)))
-			dst.second = src;
+		for (const auto &[index,value] : std::views::enumerate(results.getParameters()))
+			fittingResult[(Fitters::ParameterID)index] = value;
 
 		if (callback)
 			callback(std::move(fittingResult));
@@ -93,16 +106,30 @@ namespace JFMService::Fitters
 	void SixParameterFitter::Fit(const FittingInput &input, Callback callback)
 	{
 		//! this can be rebuild
+		auto checkRepetitionCondition = [&](const SimplexOptimizationResults<6>& result)
+			{
+				auto parameters = result.getParameters();
+				bool negativeValueParameters = std::ranges::any_of(parameters, [](double value)
+					{ return value < 0; });
+				bool bigError = result.getError() > 1e-4;
+				return negativeValueParameters or bigError;
+			};
+		//! this can be rebuild and templated via model and number of parameters
 		IVFittingSetup<6> setUp = transferFittingSetUp<6>(input);
 		Data NSDdata = transferFittingData(input.initialData.characteristic);
 		JFMAdditionalParameters additionalParameters = transferAdditionalParameters(input.initialData.additionalParameters, input.fixConfig);
 		NumericStorm::Fitting::Parameters<6> initialPoint = transferInitialPoint<6>(input.initialValues);
+		SimplexOptimizationResults<6> results;
+		do
+		{
+			results = fit<SixParameterModel, 6>(setUp, initialPoint, NSDdata, additionalParameters);
+			initialPoint = results.getParameters();
+		} while (checkRepetitionCondition(results));
 
-		SimplexOptimizationResults<6> results = fit<SixParameterModel, 6>(setUp, initialPoint, NSDdata, additionalParameters);
 		ParameterMap fittingResult;
 
-		for (const auto &[dst, src, index] : std::views::zip(fittingResult, results.getParameters(), std::ranges::iota_view(0, 7)))
-			dst.second = src;
+		for (const auto& [index, value] : std::views::enumerate(results.getParameters()))
+			fittingResult[(Fitters::ParameterID)index] = value;
 
 		if (callback)
 			callback(std::move(fittingResult));

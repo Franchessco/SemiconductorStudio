@@ -50,20 +50,20 @@ namespace JFMService
     std::vector<std::vector<double>> CharacteristicLoader::loadDatContent(std::string &content)
     {
         std::vector<std::string> lines = utils::spliting(content, "\n");
-        int size = lines.size();
-        std::vector<double> voltages(size), currents(size), densityCurrents(size);
+        std::vector<double> voltages, currents, densityCurrents;
 
-        auto parseColumn = [&](int index, const std::string &line)
+        for (const auto& line:lines)
         {
             auto splittedLine = utils::spliting(line, "\t");
-            if (splittedLine.size() == 3)
-                return std::stod(splittedLine[index]);
-        };
+            if(splittedLine.size() == 3)
+            {
+                voltages.push_back(std::stod(splittedLine[0]));
+                currents.push_back(std::stod(splittedLine[1]));
+                densityCurrents.push_back(std::stod(splittedLine[2]));
+            }
+        }
         std::vector<std::vector<double>> items = {voltages, currents, densityCurrents};
-
-        for (const auto &[i, dest] : std::views::enumerate(items))
-            std::ranges::transform(lines, dest.begin(), [&](const std::string &line)
-                                   { return parseColumn(i, line); });
+ 
         return items;
     };
     bool CharacteristicLoader::CheckExtentionCompatibility(const std::filesystem::path &path)

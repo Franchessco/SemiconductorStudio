@@ -14,11 +14,11 @@ namespace JFMService::Fitters
         Rsh,
         alpha,
         Rsh2,
-        size
+        p_size
     };
     enum AdditionalParametersID
     {
-        Temperature = size,
+        Temperature = p_size,
     };
 
     using namespace FittingService;

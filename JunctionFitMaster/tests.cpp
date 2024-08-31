@@ -4,9 +4,11 @@
 // #include "DataManager.hpp"
 void Tests::test()
 {
-    testDataManager();
+    //testDataManager();
     // testModel();
     // testYAML();
+    //testFitting();
+    testAutoRange();
 }
 
 void Tests::testDataManager()
@@ -15,7 +17,6 @@ void Tests::testDataManager()
     testLoadingCharacteristics();
     testYAMLDumping();
     testYAMLLoading();
-
 }
 
 void Tests::testLoadingCharacteristics()
@@ -114,6 +115,177 @@ void Tests::testYAMLDumping()
     LoaderOutput output;
     output.mcData = std::make_unique<MCOutput>(mcOutput);
     DataManager manager;
-    manager.Save("testDump.yaml",output,nullptr);
-    //std::cin.get();
+    manager.Save("testDump.yaml", output, nullptr);
+    // std::cin.get();
+}
+void Tests::testFitting()
+{
+    std::cout << std::endl
+              << std::endl
+              << "----------------------" << std::endl;
+    std::cout << "Testing Fitting" << std::endl;
+
+    // testFourParameterModel();
+    testSixParameterModel();
+    // std::cin.get();
+}
+void Tests::testSixParameterModel()
+{
+    CalculatingData plotData;
+    DataCalculator calculator;
+    std::vector<double> V, I;
+    utils::generateVectorAtGivenRanges(V, 0.01, 1, 0.001);
+    I = V;
+    {
+
+        PlotData characteristic;
+        ParameterMap parameters;
+        AdditionalParameterMap additional;
+        characteristic.voltageData = {V.begin(), V.size()};
+        characteristic.currentData = {I.begin(), I.size()};
+        std::array<double, 6> p{1.65, 4e-12, 15, 2.5e4, 3.5, 6e3};
+        for (const auto &[id, value] : std::views::enumerate(p))
+            parameters[(Fitters::ParameterID)id] = value;
+        additional[Fitters::AdditionalParametersID::Temperature] = 220;
+
+        plotData.characteristic = characteristic;
+        plotData.additionalParameters = additional;
+        plotData.parameters = parameters;
+        plotData.modelID = JFMModelID::Model6P;
+        calculator.CalculateData(plotData);
+    }
+
+    EstimateInput estimateInput = createEstimateInput(plotData);
+    //    FittingInput input = createFittingInput(estimateInput);
+    FittingInput input;
+    input.initialData = estimateInput;
+    std::array<double, 6> p{1.8, 7e-12, 30, 9e4, 4, 7e3};
+    ParameterMap parameters;
+    for (const auto &[id, value] : std::views::enumerate(p))
+        parameters[(Fitters::ParameterID)id] = value;
+
+    ParamBounds bounds;
+    std::array<double, 6> minBound{0.5, 1e-12, 10, 1e3, 1, 1e3};
+    std::array<double, 6> maxBound{3, 9e-12, 50, 9e5, 6, 9e3};
+    for (const auto &[id, min, max] : std::views::zip(std::ranges::iota_view(0, 7), minBound, maxBound))
+        bounds[(Fitters::ParameterID)id] = {min, max};
+    input.bounds = bounds;
+    input.useBounds = true;
+    input.initialValues = parameters;
+
+    Fitters::Fitter fitter;
+    ParameterMap out;
+    fitter.Fit(input, [&](ParameterMap &&result)
+               { out = std::move(result); });
+}
+void Tests::testFourParameterModel()
+{
+    CalculatingData plotData;
+    DataCalculator calculator;
+    std::vector<double> V, I;
+    utils::generateVectorAtGivenRanges(V, 0.01, 3, 0.1);
+    I = V;
+    {
+
+        PlotData characteristic;
+        ParameterMap parameters;
+        AdditionalParameterMap additional;
+        characteristic.voltageData = {V.begin(), V.size()};
+        characteristic.currentData = {I.begin(), I.size()};
+        std::array<double, 4> p{1, 5e-8, 5e-5, 5e8};
+        for (const auto &[id, value] : std::views::enumerate(p))
+            parameters[(Fitters::ParameterID)id] = value;
+        additional[Fitters::AdditionalParametersID::Temperature] = 330;
+
+        plotData.characteristic = characteristic;
+        plotData.additionalParameters = additional;
+        plotData.parameters = parameters;
+        plotData.modelID = JFMModelID::Model4P;
+        calculator.CalculateData(plotData);
+    }
+
+    EstimateInput estimateInput = createEstimateInput(plotData);
+    FittingInput input = createFittingInput(estimateInput);
+
+    Fitters::Fitter fitter;
+    ParameterMap out;
+    fitter.Fit(input, [&](ParameterMap &&result)
+               { out = std::move(result); });
+};
+
+void Tests::createData(CalculatingData &data)
+{
+    DataCalculator calculator;
+    std::vector<double> V, I;
+    utils::generateVectorAtGivenRanges(V, 0.01, 3, 0.1);
+    I = V;
+
+    PlotData characteristic;
+    ParameterMap parameters;
+    AdditionalParameterMap additional;
+    characteristic.voltageData = {V.begin(), V.size()};
+    characteristic.currentData = {I.begin(), I.size()};
+    std::array<double, 4> p{10, 5e-8, 9e-5, 9e5};
+    for (const auto &[id, value] : std::views::enumerate(p))
+        parameters[(Fitters::ParameterID)id] = value;
+    additional[Fitters::AdditionalParametersID::Temperature] = 330;
+
+    data.characteristic = characteristic;
+    data.additionalParameters = additional;
+    data.parameters = parameters;
+    data.modelID = JFMModelID::Model4P;
+    calculator.CalculateData(data);
+}
+
+JFMService::FittingService::EstimateInput Tests::createEstimateInput(const CalculatingData &calculatingDataInput)
+{
+    EstimateInput toReturn;
+    toReturn.additionalParameters = calculatingDataInput.additionalParameters;
+    toReturn.modelID = calculatingDataInput.modelID;
+    toReturn.characteristic = calculatingDataInput.characteristic;
+    return toReturn;
+}
+
+JFMService::FittingService::FittingInput Tests::createFittingInput(const JFMService::FittingService::EstimateInput &estimateInput)
+{
+    FittingInput toReturn;
+    toReturn.initialData = estimateInput;
+    // std::array<double, 4> p{1.1, 6e-8, 6e-5, 6e5};
+    std::array<double, 4> p{5, 5e-5, 5e-2, 5e5};
+    ParameterMap parameters;
+    for (const auto &[id, value] : std::views::enumerate(p))
+        parameters[(Fitters::ParameterID)id] = value;
+
+    ParamBounds bounds;
+    std::array<double, 4> minBound{0.5, 1e-12, 1e-9, 1e2};
+    std::array<double, 4> maxBound{20, 9e-3, 9e-3, 9e9};
+    for (const auto &[id, min, max] : std::views::zip(std::ranges::iota_view(0, 5), minBound, maxBound))
+        bounds[(Fitters::ParameterID)id] = {min, max};
+    toReturn.bounds = bounds;
+    toReturn.useBounds = true;
+    toReturn.initialValues = parameters;
+
+    return toReturn;
+};
+void Tests::testAutoRange()
+{
+
+    std::filesystem::path path = "ivd_HZB25_T181_L0.dat";
+    using namespace JFMService;
+    using namespace DataManagementService;
+    using namespace JFMService::FittingService;
+    DataManager manager;
+    LoaderOutput output;
+
+    manager.Load(path, [&](LoaderOutput result)
+                 { output = std::move(result); });
+    FourParameterModelPreFit prefitter;
+    CharacteristicData characteristic = *output.data;
+    using names = CharacteristicData::DataNames;
+    std::span<double> V{characteristic[names::Voltage].begin(), characteristic[names::Voltage].end()}, I{characteristic[names::Current].begin(), characteristic[names::Current].end()};
+    JFMService::FittingService::PlotData data;
+    data.voltageData = V;
+    data.currentData = I;
+    std::pair<double, double> range = prefitter.rangeData(data);
+    std::cout << "lower range: " << range.first << " upper range: " << range.second;
 };

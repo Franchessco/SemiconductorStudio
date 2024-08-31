@@ -10,8 +10,8 @@ namespace JFMService
     double Chi2ErrorModel::NSCalculateError(const Data &original, const Data &checked)
     {
         double error{0.0};
-        for (const auto &[orig, check] : std::views::zip(original[0], checked[0]))
-            error += std::pow((std::log(orig) - std::log(check)), 2);
+        for (const auto &[orig, check] : std::views::zip(original[1], checked[1]))
+            error += std::pow((std::log(orig) - std::log(check)), 2) ;
         return error;
     }
 
@@ -24,3 +24,6 @@ namespace JFMService
     }
 
 }
+//
+//diff = log(data[, 2]) - log(jv[, 2])
+//sum(diff ^ 2 / log(data[, 2]) ^ 2)

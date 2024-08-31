@@ -1,10 +1,10 @@
 #include "JFMModels.hpp"
 namespace JFMService
 {
-    template <size_t size>
-    std::array<double, size> adjustFixingConfiguration(NumericStorm::Fitting::Parameters<size> &parameters, JFMAdditionalParameters &additionalParameters)
+    template <size_t parameter_size>
+    std::array<double, parameter_size> adjustFixingConfiguration(NumericStorm::Fitting::Parameters<parameter_size> &parameters, JFMAdditionalParameters &additionalParameters)
     {
-        std::array<double, size> destination(parameters.getParameters());
+        std::array<double, parameter_size> destination(parameters.getParameters());
         std::valarray<double> fixedValues(additionalParameters.fixingValues.getParameters());
         FixingConfiguration config = additionalParameters.fixingConfiguration;
         for (const auto &[dst, src] : std::views::zip(destination, fixedValues))
@@ -41,8 +41,21 @@ namespace JFMService
         for (const auto &[V, I] : std::views::zip(data[0], data[1]))
             func(V, I, I0, A, Rsh, Rs, additionalParameters.Temperature);
     }
-    void FourParameterModel::call(const CalculatingData& data)
+    void FourParameterModel::call( CalculatingData& data)
     {
+        NumericStorm::Fitting::Data NSData(2);
+        NSData[0] = std::vector<double>{data.characteristic.voltageData.begin(),data.characteristic.voltageData.end()};
+        NSData[1] = std::vector<double>{ data.characteristic.currentData.begin(),data.characteristic.currentData.end() };
+        NumericStorm::Fitting::Parameters<4> params;
+        for (const auto& [id, val] : data.parameters)
+            params[id] = val;
+        JFMAdditionalParameters additional;
+        additional.Temperature = (*data.additionalParameters.begin()).second;
+        current(NSData, params, additional);
+        for (const auto& [dst, src] : std::views::zip(data.characteristic.currentData, NSData[1]))
+            dst = src;
+        for (const auto& [dst, src] : std::views::zip(data.characteristic.voltageData, NSData[0]))
+            dst = src;
     };
 
     SixParameterModel::SixParameterModel()
@@ -70,9 +83,21 @@ namespace JFMService
         for (const auto &[V, I] : std::views::zip(data[0], data[1]))
             func(V, I, I0, A, Rsh, Rs, alpha, Rsh2, additionalParameters.Temperature);
     }
-    void SixParameterModel::call(const CalculatingData& data)
+    void SixParameterModel::call( CalculatingData& data)
     {
-
+        NumericStorm::Fitting::Data NSData(2);
+        NSData[0] = std::vector<double>{ data.characteristic.voltageData.begin(),data.characteristic.voltageData.end() };
+        NSData[1] = std::vector<double>{ data.characteristic.currentData.begin(),data.characteristic.currentData.end() };
+        NumericStorm::Fitting::Parameters<6> params;
+        for (const auto& [id, val] : data.parameters)
+            params[id] = val;
+        JFMAdditionalParameters additional;
+        additional.Temperature = (*data.additionalParameters.begin()).second;
+        current(NSData, params, additional);
+        for (const auto& [dst, src] : std::views::zip(data.characteristic.currentData, NSData[1]))
+            dst = src;
+        for (const auto& [dst, src] : std::views::zip(data.characteristic.voltageData, NSData[0]))
+            dst = src;
     };
 
 }
