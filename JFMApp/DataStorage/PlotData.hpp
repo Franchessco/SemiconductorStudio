@@ -52,6 +52,7 @@ namespace JFMApp::Data
 		std::pair<ParameterID, ParameterID> mcTempParams{};
 
 		ImVector<unsigned int> mcTabs{};
+		ImVector<ImGuiID> tabsIDs{};
 
 		Characteristic::MCSimulation* activeMC{ nullptr };
 

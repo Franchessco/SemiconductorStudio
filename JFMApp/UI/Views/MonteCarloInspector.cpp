@@ -108,6 +108,8 @@ namespace JFMApp::Views {
 
 			if (ImGui::TabItemButton("Add", ImGuiTabItemFlags_Trailing | ImGuiTabItemFlags_NoTooltip)) {
 				data.mcTabs.push_back(data.mcTabs.back() + 1);
+				std::string id = "MC Tab Dock" + std::to_string(data.mcTabs.back());
+				data.tabsIDs.push_back(ImGui::GetID(id.c_str()));
 			}
 			int activeTab = data.mcTabs[0];
 			for (auto& tab : data.mcTabs) {
@@ -207,7 +209,7 @@ namespace JFMApp::Views {
 						std::string dName = "##tabDock" + std::to_string(tab);
 						ImGui::BeginChild(dName.c_str(), child_size);
 
-						ImGuiID dockspace_id = tab + 1;
+						ImGuiID dockspace_id = data.tabsIDs[tab - 1];
 						ImGui::DockSpace(dockspace_id, child_size, ImGuiDockNodeFlags_None);
 
 						ImGui::EndChild();
@@ -277,7 +279,7 @@ namespace JFMApp::Views {
 					std::string dName = "##tabDockHidden" + std::to_string(tab);
 					//ImGui::BeginChild(dName.c_str(), child_size, child_flags, window_flags);
 
-					ImGuiID dockspace_id = tab + 1;
+					ImGuiID dockspace_id = data.tabsIDs[tab - 1];
 					ImGui::DockSpace(dockspace_id, child_size, ImGuiDockNodeFlags_KeepAliveOnly);
 
 					//ImGui::EndChild();
@@ -288,7 +290,7 @@ namespace JFMApp::Views {
 				for (auto& mc : data.mcPlots) {
 
 
-					ImGui::SetNextWindowDockID(mc.tab + 1, ImGuiCond_Once);
+					ImGui::SetNextWindowDockID(data.tabsIDs[mc.tab - 1], ImGuiCond_Once);
 					ImGui::Begin(mc.name.c_str(), nullptr, ImGuiWindowFlags_NoCollapse);
 					drawPlot(mc, nConf);
 					ImGui::End();

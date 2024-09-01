@@ -8,7 +8,7 @@ namespace JFMApp::Views {
 		ImGuiChildFlags child_flags = ImGuiChildFlags_Border;
 		ImGuiWindowFlags win_flags = ImGuiWindowFlags_MenuBar;
 
-		ImGui::BeginChild("Browser", ImVec2{ 0.0, ImGui::GetContentRegionAvail().y * 0.4f }, child_flags, win_flags);
+		ImGui::BeginChild("Browser", ImVec2{ 0.0, ImGui::GetContentRegionAvail().y }, child_flags, win_flags);
 		if (ImGui::BeginMenuBar()) {
 			if (ImGui::Button("<-") /*&& data.currentPath != data.rootPath*/) {
 				data.m_selection.clear();

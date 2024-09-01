@@ -24,26 +24,31 @@ namespace JFMApp::Views {
 			ImGui::TableNextColumn();
 			//Fixed parameters
 			{
-				bool col = false;
-				if (ch.fixedParameterIDs != ch.savedFixedParameterIDs || ch.fixedParametersValues != ch.savedFixedParametersValues) {
-					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0, 0.0, 0.0, 1.0));
-					col = true;
-				}
+				
 
 
 				auto& params = nConf->modelParameters[ch.modelID];
 				for (const auto& key : params) {
 					std::string cname = "##" + nConf->parameters[key];
+
+					bool col = false;
+					if (ch.fixedParameterIDs[key] != ch.savedFixedParameterIDs[key] || ch.fixedParametersValues[key] != ch.savedFixedParametersValues[key]) {
+						ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0, 0.0, 0.0, 1.0));
+						col = true;
+					}
+
 					ImGui::Checkbox(cname.c_str(), &ch.fixedParameterIDs[key]);
 					ImGui::SameLine();
 					if (ImGui::InputDouble(nConf->parameters[key].c_str(), &ch.fixedParametersValues[key], 0.0, 0.0, "%e") && ImGui::IsItemDeactivatedAfterEdit()) {
 						ch.fixedParametersValues[key] = std::clamp(ch.fixedParametersValues[key], nConf->paramBounds[key].first, nConf->paramBounds[key].second);
 					}
+
+					if (col) {
+						ImGui::PopStyleColor();
+					}
 				}
 
-				if (col) {
-					ImGui::PopStyleColor();
-				}
+				
 
 			}
 
@@ -52,22 +57,36 @@ namespace JFMApp::Views {
 			//Initial values
 			{
 				bool col = false;
-				if (ch.initialGuess != ch.savedInitialGuess || ch.useInitial != ch.savedUseInitial) {
+				if (ch.useInitial != ch.savedUseInitial) {
 					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0, 0.0, 0.0, 1.0));
 					col = true;
 				}
 
 				ImGui::Checkbox("Use initial guess", &ch.useInitial);
-				auto& params = nConf->modelParameters[ch.modelID];
-				for (auto& key : params) {
-					std::string gname = nConf->parameters[key] + " guess";
-					if (ImGui::InputDouble(gname.c_str(), &ch.initialGuess[key], 0.0, 0.0, "%e") && ImGui::IsItemDeactivatedAfterEdit())
-						ch.initialGuess[key] = std::clamp(ch.initialGuess[key], nConf->paramBounds[key].first, nConf->paramBounds[key].second);
-				}
 
 				if (col) {
 					ImGui::PopStyleColor();
 				}
+
+				auto& params = nConf->modelParameters[ch.modelID];
+				for (auto& key : params) {
+					std::string gname = nConf->parameters[key] + " guess";
+
+					bool col = false;
+					if (ch.initialGuess[key] != ch.savedInitialGuess[key]) {
+						ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0, 0.0, 0.0, 1.0));
+						col = true;
+					}
+
+					if (ImGui::InputDouble(gname.c_str(), &ch.initialGuess[key], 0.0, 0.0, "%e") && ImGui::IsItemDeactivatedAfterEdit())
+						ch.initialGuess[key] = std::clamp(ch.initialGuess[key], nConf->paramBounds[key].first, nConf->paramBounds[key].second);
+
+					if (col) {
+						ImGui::PopStyleColor();
+					}
+				}
+
+				
 			}
 
 			ImGui::TableNextColumn();
@@ -110,7 +129,7 @@ namespace JFMApp::Views {
 			//MC config
 			{
 				bool col = false;
-				if (ch.mcConfig != ch.savedMCConfig) {
+				if (ch.mcConfig.n != ch.savedMCConfig.n) {
 					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0, 0.0, 0.0, 1.0));
 					col = true;
 				}
@@ -122,8 +141,28 @@ namespace JFMApp::Views {
 				if (ImGui::InputInt("N", &n))
 					n = std::max(0, n);
 
+				if (col) {
+					ImGui::PopStyleColor();
+				}
+
+				col = false;
+				if (ch.mcConfig.saveN != ch.savedMCConfig.saveN) {
+					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0, 0.0, 0.0, 1.0));
+					col = true;
+				}
+
 				if (ImGui::InputInt("Save N", &saveN))
 					saveN = std::max(0, saveN);
+
+				if (col) {
+					ImGui::PopStyleColor();
+				}
+
+				col = false;
+				if (ch.mcConfig.sigma != ch.savedMCConfig.sigma) {
+					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0, 0.0, 0.0, 1.0));
+					col = true;
+				}
 
 				if (ImGui::InputDouble("Sigma", &sigma, 0.0, 0.0, "%e") && ImGui::IsItemDeactivatedAfterEdit())
 					sigma = sigma < 0.0 ? 1.0 : sigma;
@@ -141,19 +180,25 @@ namespace JFMApp::Views {
 			//Bounds
 			{
 				bool col = false;
-				if (ch.bounds != ch.savedBounds) {
+				if (ch.useBounds != ch.savedUseBounds) {
 					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0, 0.0, 0.0, 1.0));
 					col = true;
 				}
 
 				ImGui::Checkbox("Use bounds", &ch.useBounds);
+
+				if (col) {
+					ImGui::PopStyleColor();
+				}
+
 				if (ImGui::BeginTable("Bounds", 3, tableFlags & ~ImGuiTableFlags_BordersInner)) {
 					ImGui::TableNextRow();
 					auto& params = nConf->modelParameters[ch.modelID];
-					auto& bounds = nConf->paramBounds;
+					
 					for (auto& id : params) {
-						double min = bounds[id].first;
-						double max = bounds[id].second;
+						auto& bounds = ch.bounds;
+						double& min = bounds[id].first;
+						double& max = bounds[id].second;
 
 						std::string minName = "##min" + nConf->parameters[id];
 
@@ -161,21 +206,41 @@ namespace JFMApp::Views {
 						ImGui::Text(nConf->parameters[id].c_str());
 						ImGui::TableNextColumn();
 
+						bool col = false;
+						if (ch.bounds[id].first != ch.savedBounds[id].first) {
+							ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0, 0.0, 0.0, 1.0));
+							col = true;
+						}
+
 						ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x);
-						if (ImGui::InputDouble(minName.c_str(), &min, 0.0, 0.0, "%e"))
+						if (ImGui::InputDouble(minName.c_str(), &min, 0.0, 0.0, "%e") && ImGui::IsItemDeactivatedAfterEdit())
 							min = std::clamp(min, nConf->paramBounds[id].first, max);
 						
 						ImGui::PopItemWidth();
 
+						if (col) {
+							ImGui::PopStyleColor();
+						}
+
+						//----------------
+						col = false;
+						if (ch.bounds[id].second != ch.savedBounds[id].second) {
+							ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0, 0.0, 0.0, 1.0));
+							col = true;
+						}
 						
 						std::string maxName = "##max" + nConf->parameters[id];
 
 						ImGui::TableNextColumn();
 						ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x);
-						if (ImGui::InputDouble(maxName.c_str(), &max, 0.0, 0.0, "%e"))
+						if (ImGui::InputDouble(maxName.c_str(), &max, 0.0, 0.0, "%e") && ImGui::IsItemDeactivatedAfterEdit())
 							max = std::clamp(max, min, nConf->paramBounds[id].second);
 
 						ImGui::PopItemWidth();
+
+						if (col) {
+							ImGui::PopStyleColor();
+						}
 
 					}
 
@@ -184,9 +249,7 @@ namespace JFMApp::Views {
 				
 
 
-				if (col) {
-					ImGui::PopStyleColor();
-				}
+				
 			}
 
 			ImGui::EndTable();
@@ -214,11 +277,7 @@ namespace JFMApp::Views {
 			//Fixed parameters
 			{
 
-				bool col = false;
-				if (data.globalFixedParameterIDs != data.savedGlobalFixedParameterIDs) {
-					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0, 0.0, 0.0, 1.0));
-					col = true;
-				}
+				
 
 
 				int columns = std::max(3, (int)data.globalFixedParameterIDs.size());
@@ -227,16 +286,24 @@ namespace JFMApp::Views {
 					ImGui::TableNextRow();
 					auto& params = data.paramConfig->modelParameters[data.globalModelID];
 					for (auto& key : params) {
+						bool col = false;
+						if (data.globalFixedParameterIDs[key] != data.savedGlobalFixedParameterIDs[key]) {
+							ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0, 0.0, 0.0, 1.0));
+							col = true;
+						}
+
 						ImGui::TableNextColumn();
 						ImGui::Checkbox(data.paramConfig->parameters[key].c_str(), &data.globalFixedParameterIDs[key]);
+
+						if (col) {
+							ImGui::PopStyleColor();
+						}
 					}
 
 					ImGui::EndTable();
 				}
 
-				if (col) {
-					ImGui::PopStyleColor();
-				}
+				
 
 			}
 
@@ -279,7 +346,7 @@ namespace JFMApp::Views {
 			//MC config
 			{
 				bool col = false;
-				if (data.globalMCConfig != data.savedGlobalMCConfig) {
+				if (data.globalMCConfig.n != data.savedGlobalMCConfig.n) {
 					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0, 0.0, 0.0, 1.0));
 					col = true;
 				}
@@ -291,9 +358,27 @@ namespace JFMApp::Views {
 				if (ImGui::InputInt("N", &n))
 					n = std::max(0, n);
 
+				if (col) {
+					ImGui::PopStyleColor();
+				}
+
+				col = false;
+				if (data.globalMCConfig.saveN != data.savedGlobalMCConfig.saveN) {
+					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0, 0.0, 0.0, 1.0));
+					col = true;
+				}
 				if (ImGui::InputInt("Save N", &saveN))
 					saveN = std::max(0, saveN);
 
+				if (col) {
+					ImGui::PopStyleColor();
+				}
+
+				col = false;
+				if (data.globalMCConfig.sigma != data.savedGlobalMCConfig.sigma) {
+					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0, 0.0, 0.0, 1.0));
+					col = true;
+				}
 				if (ImGui::InputDouble("Sigma", &sigma, 0.0, 0.0, "%e") && ImGui::IsItemDeactivatedAfterEdit())
 					sigma = sigma < 0.0 ? 1.0 : sigma;
 

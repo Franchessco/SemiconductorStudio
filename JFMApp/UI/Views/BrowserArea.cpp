@@ -4,11 +4,15 @@
 
 namespace JFMApp::Views {
 	void Widgets::BrowserArea(Data::BrowserData& data) {
-		ImGui::BeginGroup();
-		CharacteristicList(data);
+		if(ImGui::Begin("Characteristic List"))
+			CharacteristicList(data);
 
-		FileSelector(data);
-		ImGui::EndGroup();
+		ImGui::End();
+	
+		if (ImGui::Begin("File Explorer"))
+			FileSelector(data);
+
+		ImGui::End();
 		
 	}
 };

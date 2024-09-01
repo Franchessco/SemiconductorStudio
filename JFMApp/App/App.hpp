@@ -6,6 +6,7 @@
 #include "IDataManager.hpp"
 
 #include "Widgets.hpp"
+#include "imgui_internal.h"
 
 namespace JFMApp {
 

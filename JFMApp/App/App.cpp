@@ -83,6 +83,7 @@ namespace JFMApp {
 
 		m_state.plotData.mcTabs.push_back(1);
 		
+		
 
 		// Disable the .ini file by setting IniFilename to nullptr
 		io.IniFilename = nullptr;
@@ -118,33 +119,69 @@ namespace JFMApp {
 		ImGui::SetNextWindowDockID(mainDockID, ImGuiCond_Once);
 		ImGuiWindowFlags JFMWFlags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoCollapse;
 
-
+		ImGuiID jfmID = ImGui::GetID("JFM");
 		ImGui::Begin("JFM", nullptr, JFMWFlags);
 
 		//ViewMenu is the menu of the main window
 
 		Views::Widgets::ViewMenu(m_state.uiState);
 
+		ImGui::DockSpace(jfmID, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_PassthruCentralNode);
+		
+
+		ImGui::End();
+		static bool docked = false;
+		if(!docked){
+			docked = true;
+			ImGui::DockBuilderRemoveNode(jfmID);
+			ImGui::DockBuilderAddNode(jfmID, ImGuiDockNodeFlags_DockSpace);
+			ImGui::DockBuilderSetNodeSize(jfmID, ImGui::GetMainViewport()->Size);
+			
+			ImGuiID dock_main_id = jfmID;
+			ImGuiID right, left;
+			ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Left, 0.6f, &left, &right);
+
+			ImGuiID rtop, rbottom;
+			ImGui::DockBuilderSplitNode(right, ImGuiDir_Up, 0.5f, &rtop, &rbottom);
+			ImGuiID ltop, lbottom;
+			ImGui::DockBuilderSplitNode(left, ImGuiDir_Up, 0.8f, &ltop, &lbottom);
+
+			ImGuiID cbTop, cbBottom;
+			ImGui::DockBuilderSplitNode(rtop, ImGuiDir_Up, 0.5f, &cbTop, &cbBottom);
+
+			ImGui::DockBuilderDockWindow("Plot Area", ltop);
+			ImGui::DockBuilderDockWindow("Characteristic Settings", lbottom);
+			ImGui::DockBuilderDockWindow("Characteristic List", cbTop);
+			ImGui::DockBuilderDockWindow("File Explorer", cbBottom);
+			ImGui::DockBuilderDockWindow("Characteristic Inspector", rbottom);
+
+		
+			ImGui::DockBuilderFinish(jfmID);
+
+			std::string id = "MC Tab Dock" + std::to_string(1);
+			m_state.plotData.tabsIDs.push_back(ImGui::GetID(id.c_str()));
+		}
+
+
 		//Next plotting area
 		if (m_state.uiState.m_showPlottingArea) {
-			ImGuiChildFlags child_flags = ImGuiChildFlags_Border | ImGuiChildFlags_AlwaysUseWindowPadding | ImGuiChildFlags_AutoResizeY;
-			ImGui::BeginChild("Plot Area", ImVec2{ ImGui::GetContentRegionAvail().x * 0.6f, ImGui::GetContentRegionAvail().y }, child_flags);
+			
 			Views::Widgets::PlottingArea(m_state.plotData);
-			ImGui::EndChild();
-			ImGui::SameLine();
+			
 		}
-		ImGui::BeginGroup();
 		//next content browser
 		if (m_state.uiState.m_showBrowserArea) {
 			Views::Widgets::BrowserArea(m_state.browserData);
+
 		}
 
 		//	Characteristics inspector - by default
 		if (m_state.uiState.m_showCharacteristicInspector) {
+			ImGui::Begin("Characteristic Inspector");
 			Views::Widgets::CharacteristicInspector(m_state.plotData);
+			ImGui::End();
 		}
-		ImGui::EndGroup();
-		ImGui::End();
+		
 
 
 		//displaying MC as a separate window
