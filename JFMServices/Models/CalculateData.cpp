@@ -1,5 +1,6 @@
 #include "CalculateData.hpp"
 #include "JFMModels.hpp"
+#include "JFMErrorModel.hpp"
 void JFMService::DataCalculator::CalculateData(CalculatingData &input)
 {
     FourParameterModel model4;
@@ -16,4 +17,10 @@ void JFMService::DataCalculator::CalculateData(CalculatingData &input)
     default:
         break;
     }
+}
+
+double JFMService::DataCalculator::CalculateError(const std::span<double> &original, const std::span<double> &checked)
+{
+    Chi2ErrorModel errorModel;
+    return errorModel.CalculateError(original, checked);
 }

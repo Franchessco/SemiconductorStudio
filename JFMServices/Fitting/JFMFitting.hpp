@@ -4,6 +4,8 @@
 #include "../Fitting/PreFitter.hpp"
 #include "../Fitting/JFMFitter.hpp"
 #include "../Models/CalculateData.hpp"
+#include "../Models/JFMErrorModel.hpp"
+#include "../MonteCarlo/JFMMonteCarlo.hpp"
 namespace JFMService::FittingService
 {
     using namespace DataManagementService;
@@ -21,6 +23,7 @@ namespace JFMService::FittingService
         virtual void Fit(const FittingInput &input, std::function<void(ParameterMap &&)> callback) override;
 
         virtual void Simulate(const MCInput &input, std::function<void(MCOutput &&)> callback) override;
+        double GetUncertainty(const MCOutput &output, ConfidenceLevel level, ParameterID id) override;
 
     private:
         DataManager m_dataManager;
@@ -28,6 +31,8 @@ namespace JFMService::FittingService
         Fitters::Fitter m_fitter;
         DataCalculator m_dataCalculator;
         const NumericsConfig m_numericsConfig;
+        MonteCarlo m_monteCarlo;
+        
 
     private:
         NumericsConfig instantiateNumericsConfig();

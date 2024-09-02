@@ -8,7 +8,9 @@ namespace JFMService
 
     void MonteCarloEngine::Simulate(const MCInput &input, std::function<void(MCOutput &&)> callback)
     {
-        MCOutput output;
+        std::jthread::jthread thread(
+            [&]()
+            {MCOutput output;
         output.mcResult.resize(input.iterations);
         output.inputData = input;
         std::shared_ptr<Fitters::AbstractFitter> fitter = m_fitter[input.startingData.initialData.modelID];
@@ -16,12 +18,12 @@ namespace JFMService
         for (auto &dst : output.mcResult)
             dst = simulate(fitter, output.inputData);
         if (callback)
-            callback(std::move(output));
+            callback(std::move(output)); });
     }
 
     void MonteCarloEngine::generateNoise(double &value, double factor)
     {
-        double sigma = (value * factor/100) / 3;
+        double sigma = (value * factor / 100) / 3;
         std::normal_distribution<double> distribution{0, sigma};
         value += distribution(m_generator);
     }
@@ -30,7 +32,7 @@ namespace JFMService
         MCResult result;
         auto callback = [&](const ParameterMap &&fittingResult)
         { result.foundParameters = fittingResult; };
-        for (auto& I : input.startingData.initialData.characteristic.currentData)
+        for (auto &I : input.startingData.initialData.characteristic.currentData)
             generateNoise(I, input.noise);
         fitter->Fit(input.startingData, callback);
         calculateFittingError(input, result);

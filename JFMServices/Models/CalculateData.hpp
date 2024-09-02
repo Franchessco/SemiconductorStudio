@@ -16,5 +16,6 @@ namespace JFMService
 	public:
 		DataCalculator() = default;
 		void CalculateData(CalculatingData &input);
+		double CalculateError(const std::span<double> &original, const std::span<double> &checked);
 	};
 }
