@@ -17,9 +17,15 @@ namespace JFMService
     class FourParameterModelPreFit : AbstractPreFit
     {
     public:
-        FourParameterModelPreFit() = default;
+        FourParameterModelPreFit();
         virtual FittingService::ParameterMap Estimate(const FittingService::EstimateInput &input) override;
-        std::pair<size_t, size_t> rangeData(const FittingService::PlotData& characteristic) { return this->RangeData(characteristic); };
+        std::pair<size_t, size_t> rangeData(const FittingService::PlotData &characteristic) { return this->RangeData(characteristic); };
+
+    private:
+        std::vector<std::pair<double, double>> m_AMultiplier;
+
+    private:
+        double adjustCoefficient(double dV);
     };
 
     class PreFitter
@@ -27,17 +33,11 @@ namespace JFMService
         using PreFitterMap = std::unordered_map<std::string, std::shared_ptr<AbstractPreFit>>;
 
     public:
-        //PreFitter() = default;
-        PreFitter() 
-        {
-            //preFitterMap["f"] = std::make_shared<FourParameterModelPreFit>();
-        };
-        std::pair<size_t, size_t> RangeData(const FittingService::PlotData& characteristic) 
-        {
-            return preFitterMap["f"]->RangeData(characteristic); 
-        };
-        virtual FittingService::ParameterMap Estimate(const FittingService::EstimateInput& input) { return FittingService::ParameterMap(); };
+        PreFitter()
+            std::pair<size_t, size_t> RangeData(const FittingService::PlotData &characteristic);
+        FittingService::ParameterMap Estimate(const FittingService::EstimateInput &input);
 
+    private:
     private:
         PreFitterMap preFitterMap{};
     };
