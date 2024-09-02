@@ -50,7 +50,7 @@ namespace JFMApp::Views {
 		std::string& prX = nConf.parameters[mc.parameters.first];
 
 		const auto& params = nConf.modelParameters[mc.mc->parent->modelID];
-		ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.25f);
+		ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.20f);
 		if (ImGui::BeginCombo("X", prX.c_str())) {
 
 			for (const auto& param : params) {
@@ -76,6 +76,11 @@ namespace JFMApp::Views {
 
 			ImGui::EndCombo();
 		}
+
+		ImGui::SameLine();
+		if (ImGui::Button("Save") && mc.save)
+			mc.save();
+
 		ImGui::PopItemWidth();
 
 		ImVec2 plotAreaSize = ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y);

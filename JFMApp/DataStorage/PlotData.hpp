@@ -44,6 +44,8 @@ namespace JFMApp::Data
 			std::pair<ParameterID, ParameterID> parameters{};
 			std::string name{};
 			int tab{ -1 };
+
+			std::function<void()> save{};
 		};
 
 		std::vector<MCPlotsData> mcPlots{};

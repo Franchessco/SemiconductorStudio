@@ -11,25 +11,23 @@ namespace JFMApp::Data
 		T = loaded.Temperature;
 		name = loaded.Name;
 		modelID = 0;
+		savedModelID = modelID;
 		initState();
 	}
 
 	void Characteristic::initState() {
 		mcMutex = std::make_shared<std::mutex>();
-
-
 	}
 
 	EstimateInput Characteristic::getEstimateInput() {
 		EstimateInput input{};
 
-		input.additionalParameters[0] = T;
 
 		std::span<double> eV{ V.begin() + dataRange.first, V.begin() + dataRange.second };
 		std::span<double> eI{ I.begin() + dataRange.first, I.begin() + dataRange.second };
 
 		//FIX this in the future - abstract parameters in the loading service
-		input.additionalParameters[0] = T;
+		input.additionalParameters[6] = T;
 		input.modelID = savedModelID;
 		input.characteristic = { eV, eI };
 
@@ -60,6 +58,16 @@ namespace JFMApp::Data
 
 	void Characteristic::submitFitting(const ParameterMap& parameters, double error) {
 		fittedParameters = parameters;
+		tunedParameters = parameters;
+		fixedParametersValues = parameters;
+		savedFixedParametersValues = parameters;
+		for (const auto& [k, v] : parameters) {
+			fixedParameterIDs[k] = false;
+			savedFixedParameterIDs[k] = false;
+		}
+		initialGuess = parameters;
+		savedInitialGuess = parameters;
+		tunedI = fittedI;
 		isFitted = true;
 		fitError = error;
 	}
@@ -70,7 +78,7 @@ namespace JFMApp::Data
 		fittedI.resize(data.characteristic.currentData.size());
 		data.characteristic.currentData = std::span<double>{ fittedI };
 		data.parameters = fittedParameters;
-		data.additionalParameters = { {0, T} };
+		data.additionalParameters = { {6, T} };
 		data.modelID = modelID;
 		return data;
 	}
@@ -81,7 +89,7 @@ namespace JFMApp::Data
 		tunedI.resize(data.characteristic.currentData.size());
 		data.characteristic.currentData = std::span<double>{ tunedI };
 		data.parameters = tunedParameters;
-		data.additionalParameters = { {0, T} };
+		data.additionalParameters = { {6, T} };
 		data.modelID = modelID;
 		return data;
 	}
@@ -102,16 +110,14 @@ namespace JFMApp::Data
 	void Characteristic::submitMC(const MCOutput& out) {
 		MCSimulation sim{};
 		sim.data.resize(out.mcResult.size());
-
 		for (const auto& [src, dest] : std::views::zip(out.mcResult, sim.data)) {
-			dest.error = src.error;
-			dest.parameters = src.foundParameters;
+			dest = src;
 		}
-
+		sim.sigma = out.inputData.noise;
 		sim.fixConfig = out.inputData.startingData.fixConfig;
 
 		sim.parent = this;
-
+		std::scoped_lock lk{ *mcMutex };
 		mcData.push_back(sim);
 	}
 

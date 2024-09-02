@@ -61,7 +61,7 @@ namespace JFMApp {
 		m_state.browserData.m_characteristics.push_back(ch);
 
 		Data::Characteristic::MCSimulation mcSim{};
-		
+
 		for (int i = 0; i < 30; i++) {
 			Data::Characteristic::MCData data{};
 
@@ -82,8 +82,8 @@ namespace JFMApp {
 		m_state.browserData.m_characteristics[0].mcData.push_back(mcSim);
 
 		m_state.plotData.mcTabs.push_back(1);
-		
-		
+
+
 
 		// Disable the .ini file by setting IniFilename to nullptr
 		io.IniFilename = nullptr;
@@ -127,16 +127,16 @@ namespace JFMApp {
 		Views::Widgets::ViewMenu(m_state.uiState);
 
 		ImGui::DockSpace(jfmID, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_PassthruCentralNode);
-		
+
 
 		ImGui::End();
 		static bool docked = false;
-		if(!docked){
+		if (!docked) {
 			docked = true;
 			ImGui::DockBuilderRemoveNode(jfmID);
 			ImGui::DockBuilderAddNode(jfmID, ImGuiDockNodeFlags_DockSpace);
 			ImGui::DockBuilderSetNodeSize(jfmID, ImGui::GetMainViewport()->Size);
-			
+
 			ImGuiID dock_main_id = jfmID;
 			ImGuiID right, left;
 			ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Left, 0.6f, &left, &right);
@@ -155,7 +155,7 @@ namespace JFMApp {
 			ImGui::DockBuilderDockWindow("File Explorer", cbBottom);
 			ImGui::DockBuilderDockWindow("Characteristic Inspector", rbottom);
 
-		
+
 			ImGui::DockBuilderFinish(jfmID);
 
 			std::string id = "MC Tab Dock" + std::to_string(1);
@@ -165,9 +165,9 @@ namespace JFMApp {
 
 		//Next plotting area
 		if (m_state.uiState.m_showPlottingArea) {
-			
+
 			Views::Widgets::PlottingArea(m_state.plotData);
-			
+
 		}
 		//next content browser
 		if (m_state.uiState.m_showBrowserArea) {
@@ -181,7 +181,7 @@ namespace JFMApp {
 			Views::Widgets::CharacteristicInspector(m_state.plotData);
 			ImGui::End();
 		}
-		
+
 
 
 		//displaying MC as a separate window
@@ -231,12 +231,17 @@ namespace JFMApp {
 					}
 				}
 
+				if (paths.empty()) return;
+
 				m_dataLoader->Load(paths, [&](std::vector<LoaderOutput> characteristics) {
 
 
 					for (auto& c : characteristics) {
 						if (!c.success) continue;
+						//loading a characteristic
 						if (c.data) {
+
+
 							Data::Characteristic temp{ *c.data };
 							const auto& p = std::find_if(paths.begin(), paths.end(), [&](const std::filesystem::path& path) {
 								return path.string().contains(temp.name);
@@ -259,17 +264,22 @@ namespace JFMApp {
 
 							//range the data
 
-							//temp.dataRange = m_numerics->RangeData({ temp.V, temp.I });
+							temp.dataRange = m_numerics->RangeData({ temp.V, temp.I });
 
 							//estimate
 
-							//auto eParams = m_numerics->Estimate(temp.getEstimateInput());
-
+							auto eParams = m_numerics->Estimate(temp.getEstimateInput());
+							temp.savedInitialGuess = eParams;
+							temp.savedUseInitial = true;
 							//fit
-							//std::scoped_lock lk{ m_charMutex };
-							m_state.browserData.m_characteristics.push_back(temp);
-							/*m_numerics->Fit(temp.getFittingInput(), [&](ParameterMap&& output) {
-								
+							temp.savedUseBounds = true;
+							for (const auto& [k, v] : eParams) {
+								temp.bounds[k].first = v * 0.8;
+								temp.bounds[k].second = v * 1.2;
+							}
+
+							m_numerics->Fit(temp.getFittingInput(), [&](ParameterMap&& output) {
+
 
 								CalculatingData cData = temp.getCalculatingData();
 								temp.fittedParameters = output;
@@ -278,9 +288,84 @@ namespace JFMApp {
 
 								double fitError = m_numerics->CalculateError(cData.characteristic.currentData, temp.getEstimateInput().characteristic.currentData);
 								temp.submitFitting(output, fitError);
+								std::scoped_lock lk{ m_charMutex };
+								m_state.browserData.m_characteristics.push_back(temp);
 
-								
-								});*/
+								});
+
+						}
+					}
+
+					for (auto& c : characteristics) {
+						if (!c.success) continue;
+						//loading a monte carlo
+						// check if the characteristic is already loaded
+						// if not, load the characteristic
+						//	   
+						// if yes, check if montecalro data is already loaded(distinguish by the fitting config)
+						// if not, load the montecarlo data
+						//     --put montecarlo data into th echaracteristic
+						// if yes, do nothing
+						if (c.mcData) {
+							auto cc = std::find_if(m_state.browserData.m_characteristics.begin(), m_state.browserData.m_characteristics.end(), [&](Data::Characteristic& ch) {
+								return ch.path == c.mcData->inputData.startingData.name;
+								});
+
+							Data::Characteristic* ch{ nullptr };
+
+							auto loadMC = [&]() {
+								auto& mc = *c.mcData;
+								auto& cha = *ch;
+
+
+								auto mcs = std::find_if(cha.mcData.begin(), cha.mcData.end(), [&](Data::Characteristic::MCSimulation& m) {
+									return m.fixConfig == mc.inputData.startingData.fixConfig;
+									});
+
+
+								if (mcs == cha.mcData.end()) {
+									cha.submitMC(mc);
+								}
+								};
+
+
+							if (cc == m_state.browserData.m_characteristics.end()) {
+								{
+									m_dataLoader->Load(c.mcData->inputData.relPath, [&](LoaderOutput cdata) {
+										if (cdata.success && cdata.data) {
+											Data::Characteristic temp{ *cdata.data };
+											temp.path = c.mcData->inputData.relPath;
+
+
+											temp.fittedParameters = c.mcData->inputData.trueParameters;
+											temp.fixedParametersValues = c.mcData->inputData.startingData.fixConfig;
+											temp.savedFixedParametersValues = temp.fixedParametersValues;
+											temp.initialGuess = c.mcData->inputData.startingData.initialValues;
+											temp.savedInitialGuess = temp.initialGuess;
+											temp.modelID = c.mcData->inputData.startingData.initialData.modelID;
+											temp.savedModelID = temp.modelID;
+											temp.tunedParameters = temp.fittedParameters;
+											temp.isFitted = true;
+											temp.tunedParameters = temp.fittedParameters;
+											temp.dataRange = m_numerics->RangeData({ temp.V, temp.I });
+
+											auto cd = temp.getCalculatingData();
+											m_numerics->CalculateData(cd);
+											temp.fitError = m_numerics->CalculateError(temp.getEstimateInput().characteristic.currentData, cd.characteristic.currentData);
+
+
+											std::scoped_lock lk{ m_charMutex };
+											m_state.browserData.m_characteristics.push_back(temp);
+											ch = &m_state.browserData.m_characteristics.back();
+											loadMC();
+										}
+										});
+								}
+							}
+							else {
+								ch = &(*cc);
+								loadMC();
+							}
 
 						}
 					}

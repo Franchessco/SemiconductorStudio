@@ -74,6 +74,22 @@ namespace JFMApp::Data {
 
 		//montecarlo
 		struct MCData {
+			MCData() = default;
+			MCData(const MCData&) = default;
+			MCData(MCData&&) = default;
+			MCData& operator=(const MCData&) = default;
+			MCData& operator=(MCData&&) = default;
+			~MCData() = default;
+
+
+			MCData(const MCResult& res) : parameters{ res.foundParameters }, error{ res.error } {}
+			MCData& operator=(const MCResult& res) {
+				parameters = res.foundParameters;
+				error = res.error;
+				return *this;
+			}
+
+
 			ParameterMap parameters{};
 			double error{ -1.0 };
 		};
