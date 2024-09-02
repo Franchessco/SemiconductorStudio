@@ -1,5 +1,6 @@
 #include "PreFitter.hpp"
 #include "JFMFitter.hpp"
+#include "CalculateData.hpp"
 namespace JFMService
 {
 
@@ -45,6 +46,7 @@ namespace JFMService
     };
 
     FourParameterModelPreFit::FourParameterModelPreFit()
+        :AbstractPreFit{}
     {
         std::vector<double> dV = {2.000000e-01, 5.900000e-01,
                                   6.400000e-01,
@@ -158,7 +160,7 @@ namespace JFMService
         for (const auto &[dest, dv, coeff] : std::views::zip(m_AMultiplier, dV, alpha))
             dest = {dv, coeff};
         std::sort(m_AMultiplier.begin(), m_AMultiplier.end(), [&](std::pair<double, double> lhs, std::pair<double, double> rhs)
-                  { return lhs.first < rhs.first };);
+            { return lhs.first < rhs.first; });
     };
     double FourParameterModelPreFit::adjustCoefficient(double dV)
     {
@@ -170,7 +172,8 @@ namespace JFMService
             auto &[dvEnd, end] = m_AMultiplier[index+1];
             double slope = (end - start) / (dvEnd - dvStart);
             double shift = end - slope * dvEnd;
-            double A = slope * dV + shift; };
+            return  slope * dV + shift; 
+            };
         if (dV < m_AMultiplier[0].first)
             return interpolate(0);
         if (dV > m_AMultiplier.back().first)
@@ -182,9 +185,9 @@ namespace JFMService
     {
 
         std::vector<std::vector<double>> result{};
-        result[0] = {input.characteristic.voltageData.begin(), input.characteristic.voltageData.size()};
+        result[0] = std::vector<double>{ input.characteristic.voltageData.begin(), input.characteristic.voltageData.end()} ;
         result[1].resize(input.characteristic.currentData.size());
-
+        double sum=0;
         const unsigned int N{4};
         for (size_t i = 0; i < result[1].size(); i++)
         {
@@ -295,7 +298,7 @@ namespace JFMService
         double dV = V[AStart + dVE] - V[AStart + dVB];
 
         const double k = 8.6e-5;
-        double T = input.additionalParameters.at(Fitters::AdditionalParameterID::Temperature);
+        double T = input.additionalParameters.at(Fitters::AdditionalParametersID::Temperature);
         double A = 1 / (k * T * maxDer);
 
         A *= adjustCoefficient(dV);
@@ -313,14 +316,15 @@ namespace JFMService
     }
     PreFitter::PreFitter()
     {
-        preFitterMap["f"] = std::make_shared<FourParameterModelPreFit>();
+        
+        preFitterMap[Model4P] = std::make_shared<FourParameterModelPreFit>();
     };
     FittingService::ParameterMap PreFitter::Estimate(const FittingService::EstimateInput &input)
     {
-        return preFitterMap["f"]->Estimate(input);
+        return preFitterMap[Model4P]->Estimate(input);
     };
     std::pair<size_t, size_t> PreFitter::RangeData(const FittingService::PlotData &characteristic)
     {
-        return preFitterMap["f"]->RangeData(characteristic);
+        return preFitterMap[Model4P]->RangeData(characteristic);
     };
 }

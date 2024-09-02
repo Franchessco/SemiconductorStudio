@@ -17,7 +17,7 @@ namespace JFMService
     public:
         MonteCarloEngine();
         void Simulate(const MCInput &input, std::function<void(MCOutput &&)> callback);
-        double GetUncertainty(const MCOutput &output, ConfidenceLevel level, ParameterID id);
+        double GetUncertainty(const MCOutput &output, int level, ParameterID id);
 
     private:
         using UncertaintyMultipliers = std::unordered_map<uint8_t, std::unordered_map<uint8_t, double>>;

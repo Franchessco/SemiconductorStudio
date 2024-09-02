@@ -8,17 +8,17 @@ namespace JFMService
 
     void MonteCarloEngine::Simulate(const MCInput &input, std::function<void(MCOutput &&)> callback)
     {
-        std::jthread::jthread thread(
+        std::jthread thread{
             [&]()
             {MCOutput output;
         output.mcResult.resize(input.iterations);
         output.inputData = input;
         std::shared_ptr<Fitters::AbstractFitter> fitter = m_fitter[input.startingData.initialData.modelID];
 
-        for (auto &dst : output.mcResult)
+        for (auto& dst : output.mcResult)
             dst = simulate(fitter, output.inputData);
         if (callback)
-            callback(std::move(output)); });
+            callback(std::move(output)); } };
     }
 
     void MonteCarloEngine::generateNoise(double &value, double factor)
@@ -26,7 +26,7 @@ namespace JFMService
         double sigma = (value * factor / 100) / 3;
         std::normal_distribution<double> distribution{0, sigma};
         value += distribution(m_generator);
-        values = std::abs(value)
+        value = std::abs(value);
     }
     MCResult MonteCarloEngine::simulate(const std::shared_ptr<Fitters::AbstractFitter> fitter, MCInput &input)
     {
@@ -53,7 +53,7 @@ namespace JFMService
         std::span<double> fittedCurrent = data.characteristic.currentData;
         result.error = errorModel.CalculateError(trueCurrent, fittedCurrent);
     }
-    double MonteCarloEngine::GetUncertainty(const MCOutput &output, ConfidenceLevel level, ParameterID id)
+    double MonteCarloEngine::GetUncertainty(const MCOutput &output, int level, ParameterID id)
     {
         std::vector<double> values;
         values.reserve(output.mcResult.size());
@@ -73,7 +73,7 @@ namespace JFMService
         double multiplier = getUncertaintyMultiplier(
             calculateNumberOfFindingParameters(output.inputData.trueParameters,
                                                output.inputData.startingData.fixConfig),
-            level);
+            (ConfidenceLevel)level);
 
         return difference * multiplier;
     }

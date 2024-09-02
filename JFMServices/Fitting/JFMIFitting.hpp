@@ -99,6 +99,6 @@ namespace JFMService::FittingService
 		virtual void Fit(const FittingInput &input, std::function<void(ParameterMap &&)> callback) = 0;
 
 		virtual void Simulate(const MCInput &input, std::function<void(MCOutput &&)> callback) = 0;
-		double GetUncertainty(const MCOutput &output, ConfidenceLevel level, ParameterID id) = 0;
+		virtual double GetUncertainty(const MCOutput &output,  int level, ParameterID id) = 0;
 	};
 }

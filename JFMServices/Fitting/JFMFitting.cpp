@@ -107,7 +107,7 @@ namespace JFMService::FittingService
 	{
 		m_monteCarlo.Simulate(input, callback);
 	}
-	double Fitting::GetUncertainty(const MCOutput &output, ConfidenceLevel level, ParameterID id)
+	double Fitting::GetUncertainty(const MCOutput &output,  int level, ParameterID id)
 	{
 		return m_monteCarlo.GetUncertainty(output, level, id);
 	}
