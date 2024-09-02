@@ -26,6 +26,7 @@ namespace JFMService
         double sigma = (value * factor / 100) / 3;
         std::normal_distribution<double> distribution{0, sigma};
         value += distribution(m_generator);
+        values = std::abs(value)
     }
     MCResult MonteCarloEngine::simulate(const std::shared_ptr<Fitters::AbstractFitter> fitter, MCInput &input)
     {
