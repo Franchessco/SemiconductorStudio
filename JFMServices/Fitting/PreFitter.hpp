@@ -19,10 +19,7 @@ namespace JFMService
 	{
 	public:
 		FourParameterModelPreFit();
-		FourParameterModelPreFit(const FourParameterModelPreFit&) = default;
-		FourParameterModelPreFit( FourParameterModelPreFit&&) = default;
-		FourParameterModelPreFit& operator=(const FourParameterModelPreFit&) = default;
-		FourParameterModelPreFit& operator=(FourParameterModelPreFit&&) = default;
+
 		virtual FittingService::ParameterMap Estimate(const FittingService::EstimateInput& input) override;
 		std::pair<size_t, size_t> rangeData(const FittingService::PlotData& characteristic) { return this->RangeData(characteristic); };
 
