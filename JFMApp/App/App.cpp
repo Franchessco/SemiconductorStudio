@@ -243,6 +243,7 @@ namespace JFMApp {
 
 
 							Data::Characteristic temp{ *c.data };
+							temp.nConfig = m_state.nConfig;
 							const auto& p = std::find_if(paths.begin(), paths.end(), [&](const std::filesystem::path& path) {
 								return path.string().contains(temp.name);
 								});
@@ -334,6 +335,7 @@ namespace JFMApp {
 									m_dataLoader->Load(c.mcData->inputData.relPath, [&](LoaderOutput cdata) {
 										if (cdata.success && cdata.data) {
 											Data::Characteristic temp{ *cdata.data };
+											temp.nConfig = m_state.nConfig;
 											temp.path = c.mcData->inputData.relPath;
 
 
@@ -392,6 +394,7 @@ namespace JFMApp {
 						if (!c.success) continue;
 						if (c.data) {
 							Data::Characteristic temp{ *c.data };
+							temp.nConfig = m_state.nConfig;
 
 							//do preFit
 

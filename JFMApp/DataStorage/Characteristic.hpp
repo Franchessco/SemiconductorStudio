@@ -60,6 +60,7 @@ namespace JFMApp::Data {
 
 		//instead of ECS
 		std::filesystem::path path{};
+		NumericsConfig nConfig{};
 
 		std::pair<size_t, size_t> dataRange{0, 1};
 		bool isFitted{ false };

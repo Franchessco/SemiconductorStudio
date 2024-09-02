@@ -98,7 +98,11 @@ namespace JFMApp::Data
 		MCInput input;
 
 		input.startingData = getFittingInput();
-		input.relPath = "./MC";
+		input.relPath = name;
+		for (auto& [k, v] : input.startingData.fixConfig) {
+			name += "_";
+			name += nConfig.parameters[k];
+		}
 		input.trueParameters = fittedParameters;
 		input.iterations = savedMCConfig.n;
 		input.noise = savedMCConfig.sigma;
