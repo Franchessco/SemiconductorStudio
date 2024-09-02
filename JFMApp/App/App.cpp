@@ -191,7 +191,7 @@ namespace JFMApp {
 			}
 			ImGui::End();
 		}
-		ImGui::ShowDemoWindow();
+		//ImGui::ShowDemoWindow();
 
 	}
 
