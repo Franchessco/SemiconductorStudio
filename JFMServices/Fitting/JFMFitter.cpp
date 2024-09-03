@@ -84,6 +84,7 @@ namespace JFMService::Fitters
 			return (negativeValueParameters or bigError) and iterationCondition;
 		};
 		//! this can be rebuild and templated via model and number of parameters
+		
 		IVFittingSetup<4> setUp = transferFittingSetUp<4>(input);
 		Data NSDdata = transferFittingData(input.initialData.characteristic);
 		JFMAdditionalParameters additionalParameters = transferAdditionalParameters(input.initialData.additionalParameters, input.fixConfig);

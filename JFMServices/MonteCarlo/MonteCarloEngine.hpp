@@ -35,7 +35,7 @@ namespace JFMService
 
         double calculateMaximumError(const PlotData &trueData, double noiseFactor);
         void generateNoise(double &value, double factor);
-        MCResult simulate(const std::shared_ptr<Fitters::AbstractFitter> fitter, MCInput &input);
+        void simulate(const std::shared_ptr<Fitters::AbstractFitter> fitter, MCInput& input, std::vector<MCResult>& results);
         void calculateFittingError(const MCInput &input, MCResult &result);
     };
 }

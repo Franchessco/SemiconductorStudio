@@ -123,7 +123,7 @@ namespace JFMApp::Data
 		sim.fixConfig = out.inputData.startingData.fixConfig;
 
 		sim.parent = this;
-		std::scoped_lock lk{ *mcMutex };
+		//std::scoped_lock lk{ *mcMutex };
 		mcData.push_back(sim);
 	}
 
