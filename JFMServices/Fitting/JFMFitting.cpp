@@ -93,7 +93,14 @@ namespace JFMService::FittingService
 				bounds[id] = std::make_pair(min, max);
 			return bounds;
 		};
-
+		auto createModel = [&]() 
+			{
+				FittingService::Models models;
+				models[Model4P] = "Four Parameter";
+				models[Model6P] = "Six Parameter";
+				return models;
+			};
+		config.models = createModel();
 		config.modelParameters = createModelMap();
 		config.parameters = createParameterMap();
 		config.modelParameters = createModelsParameterMap();
