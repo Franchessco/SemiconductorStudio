@@ -31,11 +31,12 @@ namespace JFMService
     MCResult MonteCarloEngine::simulate(const std::shared_ptr<Fitters::AbstractFitter> fitter, MCInput &input)
     {
         MCResult result;
+        MCInput copied{ input };
         auto callback = [&](const ParameterMap &&fittingResult)
         { result.foundParameters = fittingResult; };
-        for (auto &I : input.startingData.initialData.characteristic.currentData)
-            generateNoise(I, input.noise);
-        fitter->Fit(input.startingData, callback);
+        for (auto &I : copied.startingData.initialData.characteristic.currentData)
+            generateNoise(I, copied.noise);
+        fitter->Fit(copied.startingData, callback);
         calculateFittingError(input, result);
         return result;
     }
@@ -44,9 +45,13 @@ namespace JFMService
         CalculatingData data;
         DataCalculator dataCalculator;
         Chi2ErrorModel errorModel;
+        auto characteristic = input.startingData.initialData.characteristic;
+        std::vector<double> copiedCurrent{ characteristic.currentData.begin(),characteristic.currentData.end() };
+        std::vector<double> copiedVoltage{ characteristic.voltageData.begin(),characteristic.voltageData.end() };
+
         data.additionalParameters = input.startingData.initialData.additionalParameters;
         data.parameters = result.foundParameters;
-        data.characteristic = input.startingData.initialData.characteristic;
+        data.characteristic = { {copiedVoltage.begin(),copiedVoltage.end()}, {copiedCurrent.begin(),copiedCurrent.end()}};
         data.modelID = input.startingData.initialData.modelID;
         dataCalculator.CalculateData(data);
         std::span<double> trueCurrent = input.startingData.initialData.characteristic.currentData;

@@ -26,7 +26,7 @@ namespace JFMApp::Views {
 
 	static size_t getMCColor(double error, size_t dof) {
 		size_t i = 0;
-
+		dof = 4;
 		auto& vec = chi2vec[dof - 1];
 
 		if (error > vec[0])
