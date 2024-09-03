@@ -41,7 +41,7 @@ namespace JFMApp::Data
 		input.name = name;
 		input.fixConfig = savedFixedParametersValues;
 		for (auto& [id, val] : savedFixedParameterIDs) {
-			if (val)
+			if (!val)
 				input.fixConfig.erase(id);
 		}
 
@@ -98,15 +98,17 @@ namespace JFMApp::Data
 		MCInput input;
 
 		input.startingData = getFittingInput();
-		input.relPath = name;
+		std::string mc_name = name;
+		input.startingData.name = name;
 		for (auto& [k, v] : input.startingData.fixConfig) {
-			name += "_";
-			name += nConfig.parameters[k];
+			mc_name += "_";
+			mc_name += nConfig.parameters[k];
 		}
+		mc_name += ".yaml";
+		input.relPath = mc_name;
 		input.trueParameters = fittedParameters;
 		input.iterations = savedMCConfig.n;
 		input.noise = savedMCConfig.sigma;
-
 		return input;
 	}
 

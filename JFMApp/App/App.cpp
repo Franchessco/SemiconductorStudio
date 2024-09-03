@@ -302,6 +302,11 @@ namespace JFMApp {
 								double fitError = m_numerics->CalculateError(cData.characteristic.currentData, temp.getEstimateInput().characteristic.currentData);
 								temp.submitFitting(output, fitError);
 								//std::scoped_lock lk{ m_charMutex };
+								temp.savedUseInitial = false;
+								temp.savedUseBounds = false;
+
+								temp.bounds = temp.savedBounds;
+
 								m_state.browserData.m_characteristics.push_back(temp);
 								m_state.plotData.active = &m_state.browserData.m_characteristics.back();
 								});
@@ -465,6 +470,11 @@ namespace JFMApp {
 								double fitError = m_numerics->CalculateError(cData.characteristic.currentData, temp.getEstimateInput().characteristic.currentData);
 								temp.submitFitting(output, fitError);
 
+								temp.savedUseInitial = false;
+								temp.savedUseBounds = false;
+
+								temp.bounds = temp.savedBounds;
+
 								m_state.browserData.m_characteristics.push_back(temp);
 								m_state.plotData.active = &m_state.browserData.m_characteristics.back();
 								});
@@ -599,11 +609,12 @@ namespace JFMApp {
 			m_state.plotData.m_saveMCConfCallback = [&]() {
 
 				for (auto& ch : m_state.browserData.m_characteristics) {
+					if (!ch.checked) continue;
 					MCOutput out{ ch.getMCConfig(), {} };
 					LoaderOutput lOut{};
 					lOut.mcData = std::make_unique<MCOutput>(std::move(out));
 
-					m_dataLoader->Save(ch.path, lOut, [&](LoaderOutput out) {
+					m_dataLoader->Save(ch.path.parent_path() / "MC" / lOut.mcData->inputData.relPath, lOut, [&](LoaderOutput out) {
 
 						});
 				}
