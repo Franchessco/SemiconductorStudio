@@ -73,13 +73,15 @@ namespace JFMService::Fitters
 	//! Four Parameter Fitter
 	void FourParameterFitter::Fit(const FittingInput &input, Callback callback)
 	{
+		int fittingIterationRuns = 0;
 		auto checkRepetitionCondition = [&](const SimplexOptimizationResults<4> &result)
 		{
 			auto parameters = result.getParameters();
 			bool negativeValueParameters = std::ranges::any_of(parameters, [](double value)
 															   { return value < 0; });
 			bool bigError = result.getError() > 1;
-			return negativeValueParameters or bigError;
+			bool iterationCondition = fittingIterationRuns < 5;
+			return (negativeValueParameters or bigError) and iterationCondition;
 		};
 		//! this can be rebuild and templated via model and number of parameters
 		IVFittingSetup<4> setUp = transferFittingSetUp<4>(input);
@@ -91,6 +93,7 @@ namespace JFMService::Fitters
 		{
 			results = fit<FourParameterModel, 4>(setUp, initialPoint, NSDdata, additionalParameters);
 			initialPoint = results.getParameters();
+			fittingIterationRuns += 1;
 		} while (checkRepetitionCondition(results));
 
 		ParameterMap fittingResult;

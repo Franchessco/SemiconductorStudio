@@ -10,7 +10,7 @@ namespace JFMApp::Data
 		I = loaded.Data[CharacteristicData::Current];
 		T = loaded.Temperature;
 		name = loaded.Name;
-		modelID = 0;
+		modelID = 3;
 		savedModelID = modelID;
 		initState();
 	}

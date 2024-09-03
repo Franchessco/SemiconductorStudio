@@ -19,19 +19,19 @@ namespace JFMApp {
 		//if (!m_numerics || !m_dataLoader) return;
 
 		//get the numerics config
-		//m_state.nConfig = m_numerics->GetConfiguration();
+		m_state.nConfig = m_numerics->GetConfiguration();
 
 		ImGui::CreateContext();
 		ImGuiIO& io = ImGui::GetIO();
 
-		Data::NumericsConfig nConfig{};
+		//Data::NumericsConfig nConfig{};
 
-		nConfig.models = std::unordered_map<ModelID, ModelName>{ {0, "6P IV"}, {1, "4P IV"} };
-		nConfig.parameters = std::unordered_map<ParameterID, ParameterName>{ {0, "I0"}, {1, "A"}, {2, "Rs"}, {3, "Rsh"}, {4, "Alpha"}, {5, "Rsh2"} };
-		nConfig.modelParameters = std::unordered_map<ModelID, std::vector<ParameterID>>{ {0, {0, 1, 2, 3, 4, 5}}, {1, {0, 1, 2, 3}} };
-		nConfig.paramBounds = std::unordered_map<ParameterID, Bounds>{ {0, {0.0, 1.0}}, {1, {0.0, 1.0}}, {2, {0.0, 1.0}}, {3, {0.0, 1.0}}, {4, {0.0, 1.0}}, {5, {0.0, 1.0}} };
+		//nConfig.models = std::unordered_map<ModelID, ModelName>{ {0, "6P IV"}, {1, "4P IV"} };
+		//nConfig.parameters = std::unordered_map<ParameterID, ParameterName>{ {0, "I0"}, {1, "A"}, {2, "Rs"}, {3, "Rsh"}, {4, "Alpha"}, {5, "Rsh2"} };
+		//nConfig.modelParameters = std::unordered_map<ModelID, std::vector<ParameterID>>{ {0, {0, 1, 2, 3, 4, 5}}, {1, {0, 1, 2, 3}} };
+		//nConfig.paramBounds = std::unordered_map<ParameterID, Bounds>{ {0, {0.0, 1.0}}, {1, {0.0, 1.0}}, {2, {0.0, 1.0}}, {3, {0.0, 1.0}}, {4, {0.0, 1.0}}, {5, {0.0, 1.0}} };
 
-		m_state.nConfig = nConfig;
+		//m_state.nConfig = nConfig;
 
 		Data::Characteristic ch{};
 		ch.name = "Test";
@@ -50,8 +50,8 @@ namespace JFMApp {
 		ch.fixedParameterIDs = ch.savedFixedParameterIDs;
 		ch.initialGuess = ch.fittedParameters;
 		ch.savedInitialGuess = ch.fittedParameters;
-		ch.bounds = nConfig.paramBounds;
-		ch.savedBounds = nConfig.paramBounds;
+		ch.bounds = m_state.nConfig.paramBounds;
+		ch.savedBounds = m_state.nConfig.paramBounds;
 
 		m_state.plotData.globalModelID = 0;
 		m_state.plotData.savedGlobalModelID = 0;
@@ -198,7 +198,8 @@ namespace JFMApp {
 	void App::update() {
 		//if (!m_numerics && !m_dataLoader) return;
 		std::scoped_lock lk{ m_charMutex };
-
+		
+		
 
 		//update the characteristic list and active characteristic
 		if (m_state.plotData.active && !(m_state.plotData.active->checked)) {
@@ -244,6 +245,7 @@ namespace JFMApp {
 
 							Data::Characteristic temp{ *c.data };
 							temp.nConfig = m_state.nConfig;
+							temp.checked = true;
 							const auto& p = std::find_if(paths.begin(), paths.end(), [&](const std::filesystem::path& path) {
 								return path.string().contains(temp.name);
 								});
@@ -274,24 +276,34 @@ namespace JFMApp {
 							temp.savedUseInitial = true;
 							//fit
 							temp.savedUseBounds = true;
-							for (const auto& [k, v] : eParams) {
-								temp.bounds[k].first = v * 0.8;
-								temp.bounds[k].second = v * 1.2;
+							for (const auto& [k, v] : eParams) 
+							{
+								if (k !=0 )
+								{
+									temp.savedBounds[k].first = 1.0 *  std::pow(10.0,std::floor(std::log10(v)) - 1);
+									temp.savedBounds[k].second = 9.0 * std::pow(10.0,std::floor(std::log10(v)) + 1);
+								}
+								else
+								{
+									temp.savedBounds[k].first = 1;
+									temp.savedBounds[k].second = 5;
+								}
 							}
+							
 
 							m_numerics->Fit(temp.getFittingInput(), [&](ParameterMap&& output) {
 
 
 								CalculatingData cData = temp.getCalculatingData();
-								temp.fittedParameters = output;
+								cData.parameters = output;
 
 								m_numerics->CalculateData(cData);
 
 								double fitError = m_numerics->CalculateError(cData.characteristic.currentData, temp.getEstimateInput().characteristic.currentData);
 								temp.submitFitting(output, fitError);
-								std::scoped_lock lk{ m_charMutex };
+								//std::scoped_lock lk{ m_charMutex };
 								m_state.browserData.m_characteristics.push_back(temp);
-
+								m_state.plotData.active = &m_state.browserData.m_characteristics.back();
 								});
 
 						}
@@ -395,6 +407,23 @@ namespace JFMApp {
 						if (c.data) {
 							Data::Characteristic temp{ *c.data };
 							temp.nConfig = m_state.nConfig;
+							temp.checked = true;
+							const auto& p = std::find_if(paths.begin(), paths.end(), [&](const std::filesystem::path& path) {
+								return path.string().contains(temp.name);
+								});
+
+							if (p != paths.end()) {
+								temp.path = *p;
+							}
+
+							temp.m_tuneCallback = [&]() {
+								//assuming the tuned parameters are copied into fitted
+								CalculatingData cData = temp.getCalculatingData();
+
+								m_numerics->CalculateData(cData);
+
+								temp.fitError = m_numerics->CalculateError(cData.characteristic.currentData, temp.getEstimateInput().characteristic.currentData);
+								};
 
 							//do preFit
 
@@ -405,14 +434,31 @@ namespace JFMApp {
 							//estimate
 
 							auto eParams = m_numerics->Estimate(temp.getEstimateInput());
-
+							temp.savedInitialGuess = eParams;
+							temp.savedUseInitial = true;
 							//fit
+							temp.savedUseBounds = true;
+							for (const auto& [k, v] : eParams)
+							{
+								if (k != 0)
+								{
+									temp.savedBounds[k].first = 1.0 * std::pow(10.0, std::floor(std::log10(v)) - 1);
+									temp.savedBounds[k].second = 9.0 * std::pow(10.0, std::floor(std::log10(v)) + 1);
+								}
+								else
+								{
+									temp.savedBounds[k].first = 1;
+									temp.savedBounds[k].second = 5;
+								}
+							}
 
 							m_numerics->Fit(temp.getFittingInput(), [&](ParameterMap&& output) {
-								std::scoped_lock lk{ m_charMutex };
+								//std::scoped_lock lk{ m_charMutex };
 
-								CalculatingData cData = temp.getCalculatingData();
+								
 								temp.fittedParameters = output;
+								CalculatingData cData = temp.getCalculatingData();
+								
 
 								m_numerics->CalculateData(cData);
 
@@ -420,6 +466,7 @@ namespace JFMApp {
 								temp.submitFitting(output, fitError);
 
 								m_state.browserData.m_characteristics.push_back(temp);
+								m_state.plotData.active = &m_state.browserData.m_characteristics.back();
 								});
 
 						}
@@ -521,8 +568,9 @@ namespace JFMApp {
 				m_numerics->Fit(active.getFittingInput(), [&](ParameterMap&& output) {
 					if (!&active) return;
 
-					CalculatingData cData = active.getCalculatingData();
 					active.fittedParameters = output;
+					CalculatingData cData = active.getCalculatingData();
+					
 
 					m_numerics->CalculateData(cData);
 

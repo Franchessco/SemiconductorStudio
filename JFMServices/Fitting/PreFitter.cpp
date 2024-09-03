@@ -14,6 +14,7 @@ namespace JFMService
         for (const auto &[V, I] : std::views::zip(characteristic.voltageData, characteristic.voltageData))
             if (I < 0.0 or V < 0.0)
                 start++;
+        start++;
         return start;
     };
 
@@ -184,7 +185,7 @@ namespace JFMService
     FittingService::ParameterMap FourParameterModelPreFit::Estimate(const FittingService::EstimateInput &input)
     {
 
-        std::vector<std::vector<double>> result{};
+        std::vector<std::vector<double>> result(2);
         result[0] = std::vector<double>{ input.characteristic.voltageData.begin(), input.characteristic.voltageData.end()} ;
         result[1].resize(input.characteristic.currentData.size());
         double sum=0;
@@ -199,18 +200,16 @@ namespace JFMService
             result[1][i] = sum / std::min(i + 1, (size_t)N);
         }
 
-        auto &I = result[0];
-        auto &V = result[1];
+        auto &V = result[0];
+        auto &I = result[1];
         Fitters::ParameterMap parameterResult{};
 
         size_t RpStart{0}, RsStart{0};
         size_t AStart{0}, AEnd{0};
 
-        for (const auto &[i, v] : std::views::zip(V, I))
-            if (i < 0.0 || v < 0.0)
-                RpStart++;
 
-        RsStart = std::min(V.size() - 1, I.size() - 1);
+
+        RsStart = I.size() - 1;
 
         double S{0.0}, S0{0.0};
 

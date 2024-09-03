@@ -26,12 +26,12 @@ namespace JFMService::FittingService
 
 	std::pair<size_t, size_t> Fitting::RangeData(const PlotData &characteristic)
 	{
-		return std::pair<size_t, size_t>();
+		return m_preFitter.RangeData(characteristic);
 	}
 
 	std::unordered_map<ParameterID, double> Fitting::Estimate(const EstimateInput &input)
 	{
-		return std::unordered_map<ParameterID, double>();
+		return m_preFitter.Estimate(input);
 	}
 
 	NumericsConfig Fitting::instantiateNumericsConfig()

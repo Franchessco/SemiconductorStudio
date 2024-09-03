@@ -89,6 +89,8 @@ namespace JFMApp::Views {
 				int id = 0;
 				for (auto& ch : data.m_characteristics) {
 					ImGui::TableNextRow();
+					
+
 					ImGui::TableNextColumn();
 					ImGui::PushID(id++);
 					ImGui::ColorEdit4("", &ch.color.x, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
@@ -104,7 +106,7 @@ namespace JFMApp::Views {
 						ch.weight = 2.0f;
 					else
 						ch.weight = 1.0f;
-
+					
 
 					ImGui::TableNextColumn();
 					ImGui::Text(ch.fitError > -1.0 ? std::to_string(ch.fitError).c_str() : "-");

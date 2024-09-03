@@ -52,13 +52,19 @@ namespace JFMApp::Views {
 							//fitted characteristics
 							if (act.isFitted && data.plotFitted) {
 								ImPlot::SetNextLineStyle(data.colorFitted);
-								ImPlot::PlotLine(act.name.c_str(), act.V.data() + act.dataRange.first, act.fittedI.data(), act.fittedI.size());
+								ImPlot::PlotLine(act.name.c_str(), act.V.data()+ act.dataRange.first, act.fittedI.data(), act.fittedI.size());
 							}
 
 							//tuned characteristics
 							if (act.isFitted && data.plotFitted) {
+								ImVec4 invColor{};
+
+								invColor.x = 1 - data.colorFitted.x;
+								invColor.y = 1 - data.colorFitted.y;
+								invColor.z = 1 - data.colorFitted.z;
+								invColor.w = 1;
 								ImPlot::SetNextLineStyle(data.colorFitted, 2.0);
-								ImPlot::PlotLine(act.name.c_str(), act.V.data() + act.dataRange.first, act.tunedI.data(), act.tunedI.size());
+								ImPlot::PlotLine(act.name.c_str(), act.V.data()+act.dataRange.first , act.tunedI.data(), act.tunedI.size());
 							}
 
 						}
@@ -79,12 +85,19 @@ namespace JFMApp::Views {
 								//fitted characteristics
 								if (ch.isFitted && data.plotFitted) {
 									ImPlot::SetNextLineStyle(data.colorFitted);
-									ImPlot::PlotLine(ch.name.c_str(), ch.V.data() + ch.dataRange.first, ch.fittedI.data(), ch.fittedI.size());
+									ImPlot::PlotLine(ch.name.c_str(), ch.V.data()+ch.dataRange.first, ch.fittedI.data(), ch.fittedI.size());
 								}
 
 								//tuned characteristics
 								if (ch.isFitted && data.plotFitted) {
-									ImPlot::SetNextLineStyle(data.colorFitted, 2.0);
+									ImVec4 invColor{};
+								
+									invColor.x = 1 - data.colorFitted.x;
+									invColor.y = 1 - data.colorFitted.y;
+									invColor.z = 1 - data.colorFitted.z;
+									invColor.w = 1;
+									ImPlot::SetNextLineStyle(invColor, 2.0);
+
 									ImPlot::PlotLine(ch.name.c_str(), ch.V.data() + ch.dataRange.first, ch.tunedI.data(), ch.tunedI.size());
 								}
 
@@ -119,6 +132,9 @@ namespace JFMApp::Views {
 								if (ImGui::Selectable(ch.name.c_str(), data.active == &ch)) {
 									data.active = &ch;
 								}
+
+
+							
 							}
 
 						}
@@ -255,7 +271,7 @@ namespace JFMApp::Views {
 						| ImGuiTableFlags_Hideable
 						| ImGuiTableFlags_SizingStretchSame;
 
-					ImVec2 tableSize = ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y);
+					ImVec2 tableSize = ImVec2(ImGui::GetContentRegionAvail().x,0);
 
 					if (ImGui::BeginTable("Parameters", 2, tableFlags, tableSize)) {
 
@@ -276,7 +292,8 @@ namespace JFMApp::Views {
 								ImGui::TableNextColumn();
 								ImGui::Text(data.paramConfig->parameters[id].c_str());
 								ImGui::TableNextColumn();
-								ImGui::Text(std::to_string(value).c_str());
+								
+								ImGui::Text("%e",value);
 							}
 
 							ImGui::EndTable();
@@ -294,7 +311,7 @@ namespace JFMApp::Views {
 								ImGui::TableNextColumn();
 								ImGui::Text(data.paramConfig->parameters[id].c_str());
 								ImGui::TableNextColumn();
-								ImGui::Text(std::to_string(value).c_str());
+								ImGui::Text("%e", value);
 							}
 
 							ImGui::EndTable();
@@ -309,12 +326,14 @@ namespace JFMApp::Views {
 
 				//draw the parameter sliders
 				{
-					if (ImGui::BeginTable("Tuned parameters", 3)) {
+
+					ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x);
+					if (ImGui::BeginTable("Tuned parameters", 3,ImGuiTableFlags_SizingStretchProp)) {
 						ImGui::TableNextRow();
 						for (auto& [id, value] : act.tunedParameters) {
 							float val = value;
-							float min = data.paramConfig->paramBounds[id].first;
-							float max = data.paramConfig->paramBounds[id].second;
+							float min = act.fittedParameters[id]/1000.0;
+							float max = act.fittedParameters[id]*1000.0;
 
 							ImGui::TableNextColumn();
 							std::string cname = "##" + data.paramConfig->parameters[id];
@@ -322,15 +341,35 @@ namespace JFMApp::Views {
 								if (act.tempParametersActive[id]) data.m_tuneCallback();
 
 							ImGui::SameLine();
-
-							if (ImGui::InputFloat(data.paramConfig->parameters[id].c_str(), &val, 0.0f, 0.0f, "%e") && ImGui::IsItemDeactivatedAfterEdit()) {
-								value = std::clamp(val, min, max);
+							ImGuiSliderFlags flags = ImGuiSliderFlags_Logarithmic;
+							
+							//and data.paramConfig->parameters[id] != std::string{ "A" }
+							//if (data.paramConfig->parameters[id] == std::string{ "I0" } )
+							//{
+							//	float deciMin{ 1 }, deciMax{ 9 }, powMin{ -20 }, powMax{ -3 }, powValue{std::floor(std::log10(value))}, deciValue{value/std::pow(10,powValue)};
+							//	if(ImGui::SliderFloat("I0 decimal", &deciValue, deciMin, deciMax, "%e"))
+							//	{
+							//		value = deciValue * std::pow(10, powValue);
+							//		if (act.tempParametersActive[id]) data.m_tuneCallback();
+							//	}
+							//	//ImGui::SameLine();
+							//	if (ImGui::SliderFloat("I0 pow", &powValue, powMin, powMax, "%e"))
+							//	{
+							//		value = deciValue * std::pow(10, powValue);
+							//		if (act.tempParametersActive[id]) data.m_tuneCallback();
+							//	}
+							//}
+							//else 
+							if (ImGui::SliderFloat(data.paramConfig->parameters[id].c_str(), &val, min, max, "%e", flags))
+							{
+								value = val;
 								if (act.tempParametersActive[id]) data.m_tuneCallback();
 							}
-							ImGui::SameLine(0.0f, 20.0f);
+							ImGui::SameLine(0.0f, 10.0f);
 
 						}
 						ImGui::EndTable();
+						ImGui::PopItemWidth();
 					}
 
 				}

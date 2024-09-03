@@ -12,9 +12,8 @@ workspace "JunctionFitMaster"
     
 group "JunctionFitMaster"
     include "./JFMServices"
-    include "./JunctionFitMaster"
     include "./JFMApp"
-    include "./JFMServices"
+    include "./JunctionFitMaster"
 
 group "Dependencies"
     include "./Vendor/LambertW"

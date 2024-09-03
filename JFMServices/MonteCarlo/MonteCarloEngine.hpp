@@ -25,7 +25,8 @@ namespace JFMService
 
         Fitters::Fitter m_fitter;
 
-        thread_local static std::mt19937 m_generator;
+        //inline thread_local static std::mt19937 m_generator;
+        inline static thread_local std::mt19937 m_generator{std::random_device{}()};
 
     private:
         int calculateNumberOfFindingParameters(const ParameterMap &trueParameters, const ParameterMap &fixedValues);
@@ -37,5 +38,4 @@ namespace JFMService
         MCResult simulate(const std::shared_ptr<Fitters::AbstractFitter> fitter, MCInput &input);
         void calculateFittingError(const MCInput &input, MCResult &result);
     };
-    thread_local std::mt19937 MonteCarloEngine::m_generator{std::random_device{}()};
 }
