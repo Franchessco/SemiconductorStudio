@@ -121,10 +121,16 @@ namespace JFMApp::Data
 		}
 		sim.sigma = out.inputData.noise;
 		sim.fixConfig = out.inputData.startingData.fixConfig;
-
+		sim.sim_name = out.inputData.relPath.filename().string();
 		sim.parent = this;
 		//std::scoped_lock lk{ *mcMutex };
-		mcData.push_back(sim);
+
+		auto d = std::find_if(mcData.begin(), mcData.end(), [&](MCSimulation& d) {
+			return d.fixConfig == sim.fixConfig;
+			});
+		if (d == mcData.end())
+			mcData.push_back(sim);
+		else *d = sim;
 	}
 
 }

@@ -38,7 +38,6 @@ namespace JFMApp::Views {
 	}
 
 	static void drawPlot(Data::PlotData::MCPlotsData& mc, Data::NumericsConfig& nConf) {
-		if (!mc.mc) return;
 		ImGui::ColorEdit4("Sigma 1", &mc.sig[0].x, ImGuiColorEditFlags_NoInputs);
 		ImGui::SameLine();
 		ImGui::ColorEdit4("Sigma 2", &mc.sig[1].x, ImGuiColorEditFlags_NoInputs);
@@ -49,7 +48,7 @@ namespace JFMApp::Views {
 
 		std::string& prX = nConf.parameters[mc.parameters.first];
 
-		const auto& params = nConf.modelParameters[mc.mc->parent->modelID];
+		const auto& params = nConf.modelParameters[mc.mc.parent->modelID];
 		ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.20f);
 		if (ImGui::BeginCombo("X", prX.c_str())) {
 
@@ -88,8 +87,8 @@ namespace JFMApp::Views {
 
 			ImPlot::SetupAxes(prX.c_str(), prY.c_str(), Data::PlotData::plotSettings.xFlags, Data::PlotData::plotSettings.yFlags);
 
-			for (auto& d : mc.mc->data) {
-				ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, -1, mc.sig[getMCColor(d.error, mc.mc->fixConfig.size())], -1.0f, mc.sig[getMCColor(d.error, mc.mc->fixConfig.size())]);
+			for (auto& d : mc.mc.data) {
+				ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, -1, mc.sig[getMCColor(d.error, mc.mc.fixConfig.size())], -1.0f, mc.sig[getMCColor(d.error, mc.mc.fixConfig.size())]);
 
 				ImPlot::PlotScatter("MC", &d.parameters[mc.parameters.first], &d.parameters[mc.parameters.second], 1);
 			}
@@ -193,7 +192,7 @@ namespace JFMApp::Views {
 
 							mcData.name = data.mcTempName;
 							mcData.parameters = data.mcTempParams;
-							mcData.mc = data.activeMC;
+							mcData.mc = *data.activeMC;
 							mcData.tab = tab;
 
 							data.mcPlots.push_back(mcData);
@@ -239,7 +238,7 @@ namespace JFMApp::Views {
 								ImGui::Separator();
 
 								for (auto& mc : ch.mcData) {
-									if (ImGui::Selectable(ch.name.c_str(), data.activeMC == &mc)) {
+									if (ImGui::Selectable(mc.sim_name.c_str(), data.activeMC == &mc)) {
 										data.activeMC = &mc;
 
 										auto& tempParams = data.mcTempParams;

@@ -97,6 +97,7 @@ namespace JFMApp::Data {
 
 		struct MCSimulation {
 			std::vector<MCData> data{};
+			std::string sim_name{};
 			ParameterMap fixConfig{};
 			double sigma{ 1.0 };
 			Characteristic* parent{ nullptr };

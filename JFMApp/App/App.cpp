@@ -630,9 +630,11 @@ namespace JFMApp {
 
 				m_numerics->Simulate(mcData, [&](MCOutput&& output) {
 					if (!&active) return;
-					std::scoped_lock lk{ *active.mcMutex };
-
+					//std::scoped_lock lk{ *active.mcMutex };
+					m_state.plotData.activeMC = nullptr;
 					active.submitMC(output);
+
+					
 					});
 				};
 

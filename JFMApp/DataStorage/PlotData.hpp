@@ -39,7 +39,7 @@ namespace JFMApp::Data
 		NumericsConfig* paramConfig{ nullptr };
 
 		struct MCPlotsData {
-			Characteristic::MCSimulation* mc{};
+			Characteristic::MCSimulation mc{};
 			std::array<ImVec4, 3> sig{ ImVec4{ 0.0f, 1.0f, 0.0f, 1.0f }, ImVec4{ 1.0f, 1.0f, 0.0f, 1.0f }, ImVec4{ 1.0f, 0.0f, 0.0f, 1.0f } };
 			std::pair<ParameterID, ParameterID> parameters{};
 			std::string name{};
