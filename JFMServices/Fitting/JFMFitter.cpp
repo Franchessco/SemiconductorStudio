@@ -81,7 +81,7 @@ namespace JFMService::Fitters
 			bool negativeValueParameters = std::ranges::any_of(parameters, [](double value)
 															   { return value < 0; });
 			bool bigError = result.getError() > 1 or result.getError()<0;
-			bool iterationCondition = fittingIterationRuns < 5;
+			bool iterationCondition = fittingIterationRuns < 2;
 			return (negativeValueParameters or bigError) and iterationCondition;
 		};
 		//! this can be rebuild and templated via model and number of parameters
@@ -94,7 +94,7 @@ namespace JFMService::Fitters
 		do
 		{
 			results = fit<FourParameterModel, 4>(setUp, initialPoint, NSDdata, additionalParameters);
-			initialPoint = results.getParameters();
+			//initialPoint = results.getParameters();
 			//if(additionalParameters.fixingConfiguration)
 				//initialPoint = 
 			fittingIterationRuns += 1;
@@ -118,7 +118,7 @@ namespace JFMService::Fitters
 				auto parameters = result.getParameters();
 				bool negativeValueParameters = std::ranges::any_of(parameters, [](double value)
 					{ return value < 0; });
-				bool bigError = result.getError() > 1e-4;
+				bool bigError = result.getError() > 1e-2;
 				return negativeValueParameters or bigError;
 			};
 		//! this can be rebuild and templated via model and number of parameters

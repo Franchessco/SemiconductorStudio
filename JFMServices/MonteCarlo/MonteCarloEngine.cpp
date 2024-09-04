@@ -6,6 +6,7 @@ namespace JFMService
 {
 	MonteCarloEngine::MonteCarloEngine() {};
 
+#define MULTI_THREAD  1;
 	static std::mutex mutex;
 	static int num = 0;
 	void MonteCarloEngine::Simulate(const MCInput& input, std::function<void(MCOutput&&)> callback)
@@ -16,24 +17,31 @@ namespace JFMService
 		//output.mcResult.resize(input.iterations);
 		output.inputData = input;
 		std::shared_ptr<Fitters::AbstractFitter> fitter = m_fitter[input.startingData.initialData.modelID];
+		std::shared_ptr<AbstractPreFit> preFitter = m_prefitter[input.startingData.initialData.modelID];
 		auto start = std::chrono::high_resolution_clock().now();
 		output.mcResult.resize(input.iterations);
 		std::vector<std::future<void>> futures;
 		for (int i =0;i<input.iterations;i++)
 		{
-
-			futures.push_back(std::async(
+#if MULTI_THREAD
+			futures.push_back(std::async(std::launch::async,
 				[&, i]()
 				{
-					simulate(fitter, output.inputData, output.mcResult,i);
+					simulate(preFitter,fitter, output.inputData, output.mcResult,i);
 				}
 			));
+#else 
+			simulate(preFitter,fitter, output.inputData, output.mcResult, i);
+#endif
+
 
 		}
+#if MULTI_THREAD
 		for (auto& fut : futures)
 			fut.get();
+#endif
 		auto end= std::chrono::high_resolution_clock().now();
-		std::cout << "time: " << (end - start).count() / 1000 << " s " << (((end - start).count() / 1000) / futures.size()) << " ms per fit" << std::endl;
+		std::cout << "time: " << (end - start).count() / 1000 << " s " << (((end - start).count() / 1000) / input.iterations) << " ms per fit" << std::endl;
 
 		if (callback)
 			callback(std::move(output)); } };
@@ -52,7 +60,7 @@ namespace JFMService
 		//value = std::abs(value);
 		
 	}
-	void MonteCarloEngine::simulate(const std::shared_ptr<Fitters::AbstractFitter> fitter, MCInput& input,std::vector<MCResult>& results,int i)
+	void MonteCarloEngine::simulate(const std::shared_ptr<AbstractPreFit>& preFitter,const std::shared_ptr<Fitters::AbstractFitter> fitter, MCInput& input,std::vector<MCResult>& results,int i)
 	{
 		MCResult result;
 		MCInput copied{ input };
@@ -66,9 +74,12 @@ namespace JFMService
 
 		for (auto& I : copiedCurrent)
 			generateNoise(I, copied.noise);
+		
+		copied.startingData.initialValues = preFitter->Estimate(copied.startingData.initialData);
 		fitter->Fit(copied.startingData, callback);
+		
 		calculateFittingError(input, result);
-		results[i] =result;
+		results[i] = result;
 		num += 1;
 		std::cout << "iteration: " << num << std::endl;
 	}
@@ -76,7 +87,7 @@ namespace JFMService
 	{
 		auto IerrorModel = [&](double trueI, double fittedI, double noise) 
 			{
-				double sigma = fittedI * noise;
+				double sigma = fittedI* noise;
 				return std::pow(((fittedI - trueI) / sigma), 2);
 			};
 		CalculatingData data;

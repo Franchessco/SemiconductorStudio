@@ -2,6 +2,8 @@
 #include "../pch.hpp"
 #include "../Fitting/JFMIFitting.hpp"
 #include "../Fitting/JFMFitter.hpp"
+#include "../Fitting/PreFitter.hpp"
+
 
 namespace JFMService
 {
@@ -24,6 +26,7 @@ namespace JFMService
         const UncertaintyMultipliers m_uncertaintyMultipliers;
 
         Fitters::Fitter m_fitter;
+        PreFitter m_prefitter;
 
         //inline thread_local static std::mt19937 m_generator;
         inline static thread_local std::mt19937 m_generator{std::random_device{}()};
@@ -35,7 +38,7 @@ namespace JFMService
 
         double calculateMaximumError(const PlotData &trueData, double noiseFactor);
         void generateNoise(double &value, double factor);
-        void simulate(const std::shared_ptr<Fitters::AbstractFitter> fitter, MCInput& input, std::vector<MCResult>& results,int i);
+        void simulate(const std::shared_ptr<AbstractPreFit>& preFitter , const std::shared_ptr<Fitters::AbstractFitter> fitter, MCInput& input, std::vector<MCResult>& results, int i);
         void calculateFittingError(const MCInput &input, MCResult &result);
     };
 }
