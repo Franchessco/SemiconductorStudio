@@ -59,14 +59,15 @@ namespace JFMService::Fitters
 		additional.Temperature = input.at(Temperature);
 		FixingConfiguration fixingConfiguration = static_cast<FixingConfiguration>(0);
 		JFMParameters destination;
-		for (const auto &[dst, src] : std::views::zip(destination.getParameters(), fixingConfig))
+		destination.getParameters().resize(6);
+		for (const auto & src :  fixingConfig)
 		{
 			auto &[key, val] = src;
-			dst = val;
-			fixingConfiguration | BIT(key);
+			destination[key] = val;
+			fixingConfiguration |= (FixingConfiguration)BIT(key);
 		}
 		additional.fixingConfiguration = fixingConfiguration;
-
+		additional.fixingValues = destination;
 		return additional;
 	}
 
@@ -79,12 +80,12 @@ namespace JFMService::Fitters
 			auto parameters = result.getParameters();
 			bool negativeValueParameters = std::ranges::any_of(parameters, [](double value)
 															   { return value < 0; });
-			bool bigError = result.getError() > 1;
+			bool bigError = result.getError() > 1 or result.getError()<0;
 			bool iterationCondition = fittingIterationRuns < 5;
 			return (negativeValueParameters or bigError) and iterationCondition;
 		};
 		//! this can be rebuild and templated via model and number of parameters
-		
+		//auto transferFixingConfiguration[&](JFMAdditionalParameters additional) {};
 		IVFittingSetup<4> setUp = transferFittingSetUp<4>(input);
 		Data NSDdata = transferFittingData(input.initialData.characteristic);
 		JFMAdditionalParameters additionalParameters = transferAdditionalParameters(input.initialData.additionalParameters, input.fixConfig);
@@ -94,6 +95,8 @@ namespace JFMService::Fitters
 		{
 			results = fit<FourParameterModel, 4>(setUp, initialPoint, NSDdata, additionalParameters);
 			initialPoint = results.getParameters();
+			//if(additionalParameters.fixingConfiguration)
+				//initialPoint = 
 			fittingIterationRuns += 1;
 		} while (checkRepetitionCondition(results));
 

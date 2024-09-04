@@ -19,7 +19,11 @@ namespace JFMService
     inline uint32_t toUnderlying(FixingConfiguration val) {return static_cast<uint32_t>(val);}
 
     inline FixingConfiguration operator|(FixingConfiguration lhs, FixingConfiguration rhs) {return static_cast<FixingConfiguration>(toUnderlying(lhs) | toUnderlying(rhs));}
-
+    inline FixingConfiguration operator|=(FixingConfiguration& lhs, FixingConfiguration rhs) 
+    {
+        lhs = static_cast<FixingConfiguration>(toUnderlying(lhs) | toUnderlying(rhs));
+        return lhs;
+    }
     inline FixingConfiguration operator&(FixingConfiguration lhs, FixingConfiguration rhs) {return static_cast<FixingConfiguration>(toUnderlying(lhs) & toUnderlying(rhs));}
 
     inline FixingConfiguration operator>>(FixingConfiguration lhs, uint32_t shift) {return static_cast<FixingConfiguration>(toUnderlying(lhs) >> shift);}

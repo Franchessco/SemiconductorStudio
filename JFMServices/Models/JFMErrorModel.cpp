@@ -17,9 +17,11 @@ namespace JFMService
 
     double Chi2ErrorModel::CalculateError(const std::span<double> &original, const std::span<double> &checked)
     {
+        
         Data origin(2), check(2);
         origin[1] = std::vector<double>(original.begin(), original.end());
         check[1] = std::vector<double>(checked.begin(), checked.end());
+        
         return NSCalculateError(origin, check);
     }
 

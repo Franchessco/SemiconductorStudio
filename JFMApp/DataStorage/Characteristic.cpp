@@ -119,6 +119,7 @@ namespace JFMApp::Data
 		for (const auto& [src, dest] : std::views::zip(out.mcResult, sim.data)) {
 			dest = src;
 		}
+		std::sort(sim.data.begin(), sim.data.end(), [](const MCData& lhs, const MCData& rhs) {return lhs.error > rhs.error; });
 		sim.sigma = out.inputData.noise;
 		sim.fixConfig = out.inputData.startingData.fixConfig;
 		sim.sim_name = out.inputData.relPath.filename().string();

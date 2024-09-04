@@ -9,7 +9,7 @@ namespace JFMService
         JFMParameters() = default;
         JFMParameters(std::initializer_list<double> parameters)
             : m_parameters{parameters} {};
-        std::valarray<double> getParameters() { return m_parameters; };
+        std::valarray<double>& getParameters() { return m_parameters; };
         double &operator[](int index) { return m_parameters[index]; };
 
     private:

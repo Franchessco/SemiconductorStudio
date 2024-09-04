@@ -16,22 +16,23 @@ namespace JFMService
 		//output.mcResult.resize(input.iterations);
 		output.inputData = input;
 		std::shared_ptr<Fitters::AbstractFitter> fitter = m_fitter[input.startingData.initialData.modelID];
-		std::vector<std::future<void>> futures;
 		auto start = std::chrono::high_resolution_clock().now();
+		output.mcResult.resize(input.iterations);
+		std::vector<std::future<void>> futures;
 		for (int i =0;i<input.iterations;i++)
 		{
 
-			futures.push_back(std::async(std::launch::async,
+			futures.push_back(std::async(
 				[&, i]()
 				{
-					simulate(fitter, output.inputData, output.mcResult);
+					simulate(fitter, output.inputData, output.mcResult,i);
 				}
 			));
 
 		}
-		auto end= std::chrono::high_resolution_clock().now();
 		for (auto& fut : futures)
 			fut.get();
+		auto end= std::chrono::high_resolution_clock().now();
 		std::cout << "time: " << (end - start).count() / 1000 << " s " << (((end - start).count() / 1000) / futures.size()) << " ms per fit" << std::endl;
 
 		if (callback)
@@ -41,14 +42,17 @@ namespace JFMService
 
 	void MonteCarloEngine::generateNoise(double& value, double factor)
 	{
-		double sigma = (value * factor / 100);
+		double noise= (value * factor / 100);
 		double copy = value;
-		std::uniform_real_distribution<double> distribution{ -1,1 };
+		//std::uniform_real_distribution<double> distribution{ -1,1 };
+		std::normal_distribution<double> distribution{ 0,1};
 		//std::cout << distribution(m_generator)*sigma << std::endl;
-		value += distribution(m_generator) * sigma;
-		value = std::abs(value);
+		value += distribution(m_generator) * noise;
+		//value = value +  distribution(m_generator)*(factor / 100) * value ;
+		//value = std::abs(value);
+		
 	}
-	void MonteCarloEngine::simulate(const std::shared_ptr<Fitters::AbstractFitter> fitter, MCInput& input,std::vector<MCResult>& results)
+	void MonteCarloEngine::simulate(const std::shared_ptr<Fitters::AbstractFitter> fitter, MCInput& input,std::vector<MCResult>& results,int i)
 	{
 		MCResult result;
 		MCInput copied{ input };
@@ -64,15 +68,20 @@ namespace JFMService
 			generateNoise(I, copied.noise);
 		fitter->Fit(copied.startingData, callback);
 		calculateFittingError(input, result);
-		std::lock_guard<std::mutex> lock(mutex);
-		results.push_back(result);
+		results[i] =result;
 		num += 1;
 		std::cout << "iteration: " << num << std::endl;
 	}
 	void MonteCarloEngine::calculateFittingError(const MCInput& input, MCResult& result)
 	{
+		auto IerrorModel = [&](double trueI, double fittedI, double noise) 
+			{
+				double sigma = fittedI * noise;
+				return std::pow(((fittedI - trueI) / sigma), 2);
+			};
 		CalculatingData data;
 		DataCalculator dataCalculator;
+		
 		Chi2ErrorModel errorModel;
 		auto characteristic = input.startingData.initialData.characteristic;
 		std::vector<double> copiedCurrent{ characteristic.currentData.begin(),characteristic.currentData.end() };
@@ -82,10 +91,25 @@ namespace JFMService
 		data.parameters = result.foundParameters;
 		data.characteristic = { {copiedVoltage.begin(),copiedVoltage.end()}, {copiedCurrent.begin(),copiedCurrent.end()} };
 		data.modelID = input.startingData.initialData.modelID;
+
+		
+		std::vector<double> trueCurrentVector{};
+		trueCurrentVector.resize(copiedCurrent.size());
+		CalculatingData trueData = data;
+		trueData.parameters = input.trueParameters;
+		trueData.characteristic.currentData = std::span<double>{ trueCurrentVector };
+		
 		dataCalculator.CalculateData(data);
-		std::span<double> trueCurrent = input.startingData.initialData.characteristic.currentData;
+		dataCalculator.CalculateData(trueData);
+		std::span<double> trueCurrent{trueCurrentVector};
 		std::span<double> fittedCurrent = data.characteristic.currentData;
-		result.error = errorModel.CalculateError(trueCurrent, fittedCurrent);
+		double accumulatedError = 0.0;
+		double noise = input.noise / 100.0;
+		for (const auto& [trueI, fitI] : std::views::zip(trueCurrent, fittedCurrent))
+			accumulatedError += IerrorModel(trueI, fitI, noise);
+
+		result.error = accumulatedError;
+
 	}
 	double MonteCarloEngine::GetUncertainty(const MCOutput& output, int level, ParameterID id)
 	{
