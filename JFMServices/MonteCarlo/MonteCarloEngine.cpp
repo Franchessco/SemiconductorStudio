@@ -45,16 +45,15 @@ namespace JFMService
 
 				std::mutex resultMutex;
 				std::vector<MCResult> finalResults(input.iterations);
-				static int j = 0;
 				for (int chunk = 0; chunk < numChunks; ++chunk) 
 				{
 					int startIdx = chunk * chunkSize;
 					futures.push_back(std::async(std::launch::async,
 						[&, startIdx]()
 						{
-							j+=1;
+							
 							std::vector<MCResult> localResults(chunkSize);
-							simulateChunk(startIdx, chunkSize, preFitter, fitter, output.inputData, localResults,j--);
+							simulateChunk(startIdx, chunkSize, preFitter, fitter, output.inputData, localResults,chunk);
 							return localResults; // Return local results
 						}
 					));
