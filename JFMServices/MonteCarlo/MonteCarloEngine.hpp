@@ -40,5 +40,8 @@ namespace JFMService
         void generateNoise(double &value, double factor);
         void simulate(const std::shared_ptr<AbstractPreFit>& preFitter , const std::shared_ptr<Fitters::AbstractFitter> fitter, MCInput& input, std::vector<MCResult>& results, int i);
         void calculateFittingError(const MCInput &input, MCResult &result);
+        void simulateChunk(int startIdx, int chunkSize, const std::shared_ptr<AbstractPreFit>& preFitter,
+            const std::shared_ptr<Fitters::AbstractFitter> fitter, MCInput& input,
+            std::vector<MCResult>& localResults,int numBlock);
     };
 }

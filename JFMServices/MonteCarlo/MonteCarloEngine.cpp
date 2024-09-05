@@ -5,46 +5,75 @@
 namespace JFMService
 {
 	MonteCarloEngine::MonteCarloEngine() {};
-
+	void MonteCarloEngine::simulateChunk(int startIdx, int chunkSize, const std::shared_ptr<AbstractPreFit>& preFitter,
+		const std::shared_ptr<Fitters::AbstractFitter> fitter, MCInput& input,
+		std::vector<MCResult>& localResults,int numBlock)
+	{
+		//int blockNumber = startIdx - chunkSize
+		for (int i = 0; i < chunkSize; ++i)
+		{
+			int idx = startIdx + i;
+			if (idx >= input.iterations)
+			{
+				localResults.resize(i);
+				break;
+			}
+			MCResult result;
+			simulate(preFitter, fitter, input, localResults, i);
+			
+		std::cout << "block:" << numBlock<<" idx: "<<i << std::endl;
+		}
+	};
 #define MULTI_THREAD  1;
 	static std::mutex mutex;
 	static int num = 0;
 	void MonteCarloEngine::Simulate(const MCInput& input, std::function<void(MCOutput&&)> callback)
 	{
+		int chunkSize = (input.iterations / 24)+1; //41
 		std::jthread thread{
 			[&]()
-			{MCOutput output;
-		//output.mcResult.resize(input.iterations);
-		output.inputData = input;
-		std::shared_ptr<Fitters::AbstractFitter> fitter = m_fitter[input.startingData.initialData.modelID];
-		std::shared_ptr<AbstractPreFit> preFitter = m_prefitter[input.startingData.initialData.modelID];
-		auto start = std::chrono::high_resolution_clock().now();
-		output.mcResult.resize(input.iterations);
-		std::vector<std::future<void>> futures;
-		for (int i =0;i<input.iterations;i++)
-		{
-#if MULTI_THREAD
-			futures.push_back(std::async(std::launch::async,
-				[&, i]()
+			{
+				MCOutput output;
+				output.inputData = input;
+				std::shared_ptr<Fitters::AbstractFitter> fitter = m_fitter[input.startingData.initialData.modelID];
+				std::shared_ptr<AbstractPreFit> preFitter = m_prefitter[input.startingData.initialData.modelID];
+				auto start = std::chrono::high_resolution_clock().now();
+				output.mcResult.resize(input.iterations);
+
+				std::vector<std::future<std::vector<MCResult>>> futures;
+				int numChunks = (input.iterations + chunkSize - 1) / chunkSize; //25
+
+				std::mutex resultMutex;
+				std::vector<MCResult> finalResults(input.iterations);
+				static int j = 0;
+				for (int chunk = 0; chunk < numChunks; ++chunk) 
 				{
-					simulate(preFitter,fitter, output.inputData, output.mcResult,i);
+					int startIdx = chunk * chunkSize;
+					futures.push_back(std::async(std::launch::async,
+						[&, startIdx]()
+						{
+							j+=1;
+							std::vector<MCResult> localResults(chunkSize);
+							simulateChunk(startIdx, chunkSize, preFitter, fitter, output.inputData, localResults,j--);
+							return localResults; // Return local results
+						}
+					));
 				}
-			));
-#else 
-			simulate(preFitter,fitter, output.inputData, output.mcResult, i);
-#endif
 
+				for (int chunk = 0; chunk < numChunks; ++chunk) {
+					auto localResults = futures[chunk].get(); // Wait for and retrieve local results
+					std::lock_guard<std::mutex> lock(resultMutex);
+					std::copy(localResults.begin(), localResults.end(), output.mcResult.begin() + (chunk * chunkSize));
+				}
 
-		}
-#if MULTI_THREAD
-		for (auto& fut : futures)
-			fut.get();
-#endif
-		auto end= std::chrono::high_resolution_clock().now();
-		std::cout << "time: " << (end - start).count() / 1000 << " s " << (((end - start).count() / 1000) / input.iterations) << " ms per fit" << std::endl;
+				auto end = std::chrono::high_resolution_clock().now();
+				std::cout << "time: " << (end - start).count() / 1000 << " s "
+						  << (((end - start).count() / 1000) / input.iterations) << " ms per fit" << std::endl;
 
-		if (callback)
-			callback(std::move(output)); } };
+				if (callback)
+					callback(std::move(output));
+			}
+		};
 		
 	}
 
@@ -80,8 +109,8 @@ namespace JFMService
 		
 		calculateFittingError(input, result);
 		results[i] = result;
-		num += 1;
-		std::cout << "iteration: " << num << std::endl;
+/*		num += 1;
+		std::cout << "iteration: " << num << std::endl;*/
 	}
 	void MonteCarloEngine::calculateFittingError(const MCInput& input, MCResult& result)
 	{
