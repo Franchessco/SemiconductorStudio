@@ -321,7 +321,12 @@ namespace JFMService
     FittingService::ParameterMap PreFitter::Estimate(const FittingService::EstimateInput &input)
     {
         return preFitterMap[Model4P]->Estimate(input);
-    };
+    }
+    std::shared_ptr<AbstractPreFit> PreFitter::operator[](const FittingService::ModelID id)
+    {
+        return preFitterMap[id];
+    }
+    ;
     std::pair<size_t, size_t> PreFitter::RangeData(const FittingService::PlotData &characteristic)
     {
         return preFitterMap[Model4P]->RangeData(characteristic);
