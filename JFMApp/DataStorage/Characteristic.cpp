@@ -121,6 +121,7 @@ namespace JFMApp::Data
 		}
 		std::sort(sim.data.begin(), sim.data.end(), [](const MCData& lhs, const MCData& rhs) {return lhs.error > rhs.error; });
 		sim.sigma = out.inputData.noise;
+		sim.iterations = out.inputData.iterations;
 		sim.fixConfig = out.inputData.startingData.fixConfig;
 		sim.sim_name = out.inputData.relPath.filename().string();
 		sim.parent = this;

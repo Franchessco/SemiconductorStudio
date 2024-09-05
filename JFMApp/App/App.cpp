@@ -1,6 +1,9 @@
 #include "pch.hpp"
 #include "App.hpp"
 
+std::vector<std::vector<double>> globalNoisyI{};
+std::vector<std::vector<double>> globalErrors{};
+
 namespace JFMApp {
 
 	using namespace JFMService::DataManagementService;
@@ -66,6 +69,7 @@ namespace JFMApp {
 			Data::Characteristic::MCData data{};
 
 			data.parameters[0] = i;
+
 			data.parameters[1] = i;
 			data.parameters[2] = i;
 			data.parameters[3] = i;
@@ -182,10 +186,50 @@ namespace JFMApp {
 			ImGui::End();
 		}
 
+		ImGui::SetNextWindowDockID(mainDockID, ImGuiCond_Once);
+		if (ImGui::Begin("RT MC"))
+		{
+			static int curr_c = 0;
+			ImVec2 s = { ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y };
+			if (ImPlot::BeginPlot("RT MC", s))
+			{
+				ImPlot::SetupAxes("V", "I", Data::PlotData::plotSettings.xFlags, Data::PlotData::plotSettings.yFlags);
+
+				ImPlot::SetupAxisScale(ImAxis_Y1, Data::Characteristic::TFL, Data::Characteristic::TFNL);
+
+				if(m_state.browserData.m_characteristics.size() > 1 && globalNoisyI.size())
+					ImPlot::PlotLine("I", m_state.browserData.m_characteristics[1].V.data() + m_state.browserData.m_characteristics[1].dataRange.first, globalNoisyI[curr_c].data(), globalNoisyI[curr_c].size());
+			}
+			ImPlot::EndPlot();
+			
+			ImGui::SliderInt("Char", &curr_c, 0, globalNoisyI.size() - 1);
+		}
+		ImGui::End();
+
+		ImGui::SetNextWindowDockID(mainDockID, ImGuiCond_Once);
+		if (ImGui::Begin("RT Error"))
+		{
+			static int curr_c = 0;
+			ImVec2 s = { ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y };
+			if (ImPlot::BeginPlot("RT Error", s))
+			{
+				ImPlot::SetupAxes("N", "Err", Data::PlotData::plotSettings.xFlags, Data::PlotData::plotSettings.yFlags);
+
+				//ImPlot::SetupAxisScale(ImAxis_Y1, Data::Characteristic::TFL, Data::Characteristic::TFNL);
+				
+				if (globalErrors.size())
+					ImPlot::PlotLine("E", globalErrors[curr_c].data(), globalErrors[curr_c].size());
+			}
+			ImPlot::EndPlot();
+
+			ImGui::SliderInt("Char", &curr_c, 0, globalErrors.size() - 1);
+		}
+		ImGui::End();
 
 
 		//displaying MC as a separate window
 		if (m_state.uiState.m_showMonteCarloInspector) {
+			ImGui::SetNextWindowDockID(mainDockID, ImGuiCond_Once);
 			if (ImGui::Begin("MC Inspector"), nullptr, ImGuiWindowFlags_NoDocking) {
 				Views::Widgets::MonteCarloInspector(m_state.plotData);
 			}
@@ -198,8 +242,8 @@ namespace JFMApp {
 	void App::update() {
 		//if (!m_numerics && !m_dataLoader) return;
 		std::scoped_lock lk{ m_charMutex };
-		
-		
+
+
 
 		//update the characteristic list and active characteristic
 		if (m_state.plotData.active && !(m_state.plotData.active->checked)) {
@@ -276,12 +320,12 @@ namespace JFMApp {
 							temp.savedUseInitial = true;
 							//fit
 							temp.savedUseBounds = true;
-							for (const auto& [k, v] : eParams) 
+							for (const auto& [k, v] : eParams)
 							{
-								if (k !=0 )
+								if (k != 0)
 								{
-									temp.savedBounds[k].first = 1.0 *  std::pow(10.0,std::floor(std::log10(v)) - 1);
-									temp.savedBounds[k].second = 9.0 * std::pow(10.0,std::floor(std::log10(v)) + 1);
+									temp.savedBounds[k].first = 1.0 * std::pow(10.0, std::floor(std::log10(v)) - 1);
+									temp.savedBounds[k].second = 9.0 * std::pow(10.0, std::floor(std::log10(v)) + 1);
 								}
 								else
 								{
@@ -289,7 +333,7 @@ namespace JFMApp {
 									temp.savedBounds[k].second = 5;
 								}
 							}
-							
+
 
 							m_numerics->Fit(temp.getFittingInput(), [&](ParameterMap&& output) {
 
@@ -460,10 +504,10 @@ namespace JFMApp {
 							m_numerics->Fit(temp.getFittingInput(), [&](ParameterMap&& output) {
 								//std::scoped_lock lk{ m_charMutex };
 
-								
+
 								temp.fittedParameters = output;
 								CalculatingData cData = temp.getCalculatingData();
-								
+
 
 								m_numerics->CalculateData(cData);
 
@@ -580,7 +624,7 @@ namespace JFMApp {
 
 					active.fittedParameters = output;
 					CalculatingData cData = active.getCalculatingData();
-					
+
 
 					m_numerics->CalculateData(cData);
 
@@ -634,7 +678,7 @@ namespace JFMApp {
 					m_state.plotData.activeMC = nullptr;
 					active.submitMC(output);
 
-					
+
 					});
 				};
 
@@ -663,7 +707,7 @@ namespace JFMApp {
 					mcI.noise = m_state.plotData.savedGlobalMCConfig.sigma;
 
 					m_numerics->Simulate(mcI, [&](MCOutput&& output) {
-						std::scoped_lock lk{ *ch.mcMutex };
+						//std::scoped_lock lk{ *ch.mcMutex };
 						ch.submitMC(output);
 						});
 				}

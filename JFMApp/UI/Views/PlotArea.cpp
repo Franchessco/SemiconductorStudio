@@ -3,6 +3,30 @@
 #include "Widgets.hpp"
 
 namespace JFMApp::Views {
+
+	static std::vector<double> GeneratePowersOf10(double lower_bound, double upper_bound) {
+		std::vector<double> powers_of_10;
+
+		if (lower_bound > upper_bound) {
+			std::swap(lower_bound, upper_bound);
+		}
+
+		int start_exponent = std::ceil(std::log10(lower_bound));
+		int end_exponent = std::floor(std::log10(upper_bound));
+
+		for (int i = start_exponent; i <= end_exponent; ++i) {
+			double base = std::pow(10, i);
+			for (int j = 1; j <= 9; ++j) {
+				double value = j * base;
+				if (value >= lower_bound && value <= upper_bound) {
+					powers_of_10.push_back(value);
+				}
+			}
+		}
+
+		return powers_of_10;
+	}
+
 	void Widgets::PlottingArea(Data::PlotData& data) {
 		if (!data.characteristics || !data.paramConfig) return;
 		if (ImGui::Begin("Plot Area")) {
@@ -19,14 +43,33 @@ namespace JFMApp::Views {
 
 				ImGui::TableNextRow();
 				ImGui::TableNextColumn();
+				static ImPlotRect limits{};
 				//draw the plot area
 				{
 					ImVec2 plotAreaSize = ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y);
 					if (ImPlot::BeginPlot("Characteristics", plotAreaSize, data.plotSettings.flags)) {
+
+						
+						
 						ImPlot::SetupAxes("V", "I", Data::PlotData::plotSettings.xFlags, Data::PlotData::plotSettings.yFlags);
 
 						Data::PlotData::plotSettings.xFlags &= ~ImPlotAxisFlags_AutoFit;
 						Data::PlotData::plotSettings.yFlags &= ~ImPlotAxisFlags_AutoFit;
+
+						
+						if (data.logY && limits.Y.Min > 0.0) {
+							std::vector<double> y_ticks = GeneratePowersOf10(limits.Y.Min, limits.Y.Max);
+
+							ImPlot::SetupAxisTicks(ImAxis_Y1, y_ticks.data(), y_ticks.size());
+						}
+
+						if (data.logX && limits.X.Min > 0.0) {
+							std::vector<double> x_ticks = GeneratePowersOf10(limits.X.Min, limits.X.Max);
+
+							ImPlot::SetupAxisTicks(ImAxis_X1, x_ticks.data(), x_ticks.size());
+						}
+
+						
 
 						if (data.logX)
 							ImPlot::SetupAxisScale(ImAxis_X1, Data::Characteristic::TFL, Data::Characteristic::TFNL);
@@ -34,14 +77,16 @@ namespace JFMApp::Views {
 						if (data.logY)
 							ImPlot::SetupAxisScale(ImAxis_Y1, Data::Characteristic::TFL, Data::Characteristic::TFNL);
 
+						limits = ImPlot::GetPlotLimits();
 
 
 						if (data.active && data.hideNonActive) {
 							auto& act = *(data.active);
 							//main characteristics
-							ImPlot::SetNextLineStyle(act.color, act.weight);
-							ImPlot::PlotLine("Active", act.V.data(), act.I.data(), std::min(act.V.size(), act.I.size()));
-
+							if (data.plotOriginal) {
+								ImPlot::SetNextLineStyle(act.color, act.weight);
+								ImPlot::PlotLine("Active", act.V.data(), act.I.data(), std::min(act.V.size(), act.I.size()));
+							}
 
 							//ranged characteristics
 							if (data.plotRanged) {
@@ -52,7 +97,7 @@ namespace JFMApp::Views {
 							//fitted characteristics
 							if (act.isFitted && data.plotFitted) {
 								ImPlot::SetNextLineStyle(data.colorFitted);
-								ImPlot::PlotLine(act.name.c_str(), act.V.data()+ act.dataRange.first, act.fittedI.data(), act.fittedI.size());
+								ImPlot::PlotLine(act.name.c_str(), act.V.data() + act.dataRange.first, act.fittedI.data(), act.fittedI.size());
 							}
 
 							//tuned characteristics
@@ -64,7 +109,7 @@ namespace JFMApp::Views {
 								invColor.z = 1 - data.colorFitted.z;
 								invColor.w = 1;
 								ImPlot::SetNextLineStyle(data.colorFitted, 2.0);
-								ImPlot::PlotLine(act.name.c_str(), act.V.data()+act.dataRange.first , act.tunedI.data(), act.tunedI.size());
+								ImPlot::PlotLine(act.name.c_str(), act.V.data() + act.dataRange.first, act.tunedI.data(), act.tunedI.size());
 							}
 
 						}
@@ -73,9 +118,10 @@ namespace JFMApp::Views {
 								if (!ch.checked) continue;
 
 								//main characteristics
-								ImPlot::SetNextLineStyle(ch.color, ch.weight);
-								ImPlot::PlotLine(ch.name.c_str(), ch.V.data(), ch.I.data(), std::min(ch.V.size(), ch.I.size()));
-
+								if (data.plotOriginal) {
+									ImPlot::SetNextLineStyle(ch.color, ch.weight);
+									ImPlot::PlotLine(ch.name.c_str(), ch.V.data(), ch.I.data(), std::min(ch.V.size(), ch.I.size()));
+								}
 								//ranged characteristics
 								if (data.plotRanged) {
 									ImPlot::SetNextLineStyle(data.colorRanged);
@@ -85,13 +131,13 @@ namespace JFMApp::Views {
 								//fitted characteristics
 								if (ch.isFitted && data.plotFitted) {
 									ImPlot::SetNextLineStyle(data.colorFitted);
-									ImPlot::PlotLine(ch.name.c_str(), ch.V.data()+ch.dataRange.first, ch.fittedI.data(), ch.fittedI.size());
+									ImPlot::PlotLine(ch.name.c_str(), ch.V.data() + ch.dataRange.first, ch.fittedI.data(), ch.fittedI.size());
 								}
 
 								//tuned characteristics
 								if (ch.isFitted && data.plotFitted) {
 									ImVec4 invColor{};
-								
+
 									invColor.x = 1 - data.colorFitted.x;
 									invColor.y = 1 - data.colorFitted.y;
 									invColor.z = 1 - data.colorFitted.z;
@@ -134,7 +180,7 @@ namespace JFMApp::Views {
 								}
 
 
-							
+
 							}
 
 						}
@@ -174,6 +220,8 @@ namespace JFMApp::Views {
 					ImGui::ColorEdit4("Fitted Color", &data.colorFitted.x, ImGuiColorEditFlags_NoInputs);
 
 					ImGui::Checkbox("Hide non-active", &data.hideNonActive);
+					ImGui::SameLine(0.0, 20.0);
+					ImGui::Checkbox("Plot Original", &data.plotOriginal);
 				}
 
 				ImGui::Separator();
@@ -271,7 +319,7 @@ namespace JFMApp::Views {
 						| ImGuiTableFlags_Hideable
 						| ImGuiTableFlags_SizingStretchSame;
 
-					ImVec2 tableSize = ImVec2(ImGui::GetContentRegionAvail().x,0);
+					ImVec2 tableSize = ImVec2(ImGui::GetContentRegionAvail().x, 0);
 
 					if (ImGui::BeginTable("Parameters", 2, tableFlags, tableSize)) {
 
@@ -292,8 +340,8 @@ namespace JFMApp::Views {
 								ImGui::TableNextColumn();
 								ImGui::Text(data.paramConfig->parameters[id].c_str());
 								ImGui::TableNextColumn();
-								
-								ImGui::Text("%e",value);
+
+								ImGui::Text("%e", value);
 							}
 
 							ImGui::EndTable();
@@ -328,12 +376,12 @@ namespace JFMApp::Views {
 				{
 
 					ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x);
-					if (ImGui::BeginTable("Tuned parameters", 3,ImGuiTableFlags_SizingStretchProp)) {
+					if (ImGui::BeginTable("Tuned parameters", 3, ImGuiTableFlags_SizingStretchProp)) {
 						ImGui::TableNextRow();
 						for (auto& [id, value] : act.tunedParameters) {
 							float val = value;
-							float min = act.fittedParameters[id]/1000.0;
-							float max = act.fittedParameters[id]*1000.0;
+							float min = act.fittedParameters[id] / 1000.0;
+							float max = act.fittedParameters[id] * 1000.0;
 
 							ImGui::TableNextColumn();
 							std::string cname = "##" + data.paramConfig->parameters[id];
@@ -342,7 +390,7 @@ namespace JFMApp::Views {
 
 							ImGui::SameLine();
 							ImGuiSliderFlags flags = ImGuiSliderFlags_Logarithmic;
-							
+
 							//and data.paramConfig->parameters[id] != std::string{ "A" }
 							//if (data.paramConfig->parameters[id] == std::string{ "I0" } )
 							//{

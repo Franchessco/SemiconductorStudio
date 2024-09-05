@@ -49,7 +49,7 @@ namespace JFMApp::Views {
 		std::string& prX = nConf.parameters[mc.parameters.first];
 
 		const auto& params = nConf.modelParameters[mc.mc.parent->modelID];
-		ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.20f);
+		ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.15f);
 		if (ImGui::BeginCombo("X", prX.c_str())) {
 
 			for (const auto& param : params) {
@@ -79,6 +79,12 @@ namespace JFMApp::Views {
 		ImGui::SameLine();
 		if (ImGui::Button("Save") && mc.save)
 			mc.save();
+
+
+		ImGui::SameLine();
+		ImGui::Value("Iterations: ", (int)mc.mc.iterations);
+		ImGui::SameLine();
+		ImGui::Text("Noise: %e", (float) mc.mc.sigma);
 
 		ImGui::PopItemWidth();
 
@@ -121,7 +127,7 @@ namespace JFMApp::Views {
 				if (ImGui::BeginTabItem(name.c_str(), nullptr, ImGuiTabItemFlags_None))
 				{
 					activeTab = tab;
-					ImVec2 s = ImVec2(ImGui::GetContentRegionAvail().x * 0.8f, ImGui::GetContentRegionAvail().y);
+					ImVec2 s = ImVec2(ImGui::GetContentRegionAvail().x * 0.75f, ImGui::GetContentRegionAvail().y);
 					ImGuiChildFlags cf = ImGuiChildFlags_Border;
 					ImGui::BeginChild("PlotsArea", s, cf);
 
@@ -226,12 +232,10 @@ namespace JFMApp::Views {
 					ImGui::SameLine();
 
 					{
-						ImVec2 listSize = ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y);
+						/*ImVec2 listSize = ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y);
 
 						if (ImGui::BeginListBox("##List", listSize) && data.characteristics) {
-							for (auto& ch : *(data.characteristics)) {
-								if (!ch.checked) continue;
-								ch.mcMutex->lock();
+							
 
 
 								ImGui::Text(ch.name.c_str());
@@ -260,10 +264,69 @@ namespace JFMApp::Views {
 
 								}
 
-								ch.mcMutex->unlock();
+								
+
+
+							
 							}
-							ImGui::EndListBox();
+							ImGui::EndListBox();*/
+						ImVec2 cSize = ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y);
+						if (ImGui::BeginChild("MC Table", cSize, ImGuiChildFlags_Border)) {
+							ImGuiTableFlags taflags = ImGuiTableFlags_BordersV | ImGuiTableFlags_BordersOuterH | ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg | ImGuiTableFlags_NoBordersInBody;
+							ImVec2 tsize = ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y);
+							if (ImGui::BeginTable("MC List", 4, taflags)) {
+								ImGui::TableSetupColumn("Item", ImGuiTableColumnFlags_NoHide);
+								ImGui::TableSetupColumn("Fix Config", ImGuiTableColumnFlags_WidthFixed, 50.0f);
+								ImGui::TableSetupColumn("Noise", ImGuiTableColumnFlags_WidthFixed, 50.0f);
+								ImGui::TableSetupColumn("Iterations", ImGuiTableColumnFlags_WidthFixed, 50.0f);
+								ImGui::TableHeadersRow();
+								for (auto& ch : *(data.characteristics)) {
+									if (!ch.checked) continue;
+									ImGui::TableNextRow();
+									ImGui::TableNextColumn();
+
+									bool open = ImGui::TreeNode(ch.name.c_str());
+									ImGui::TableNextColumn();
+									ImGui::Text("--");
+									ImGui::TableNextColumn();
+									ImGui::Text("--");
+									ImGui::TableNextColumn();
+									ImGui::Text("--");
+									if (open) {
+
+										for (auto& mc : ch.mcData) {
+											ImGui::TableNextRow();
+											ImGui::TableNextColumn();
+											if (ImGui::Selectable(mc.sim_name.c_str(), data.activeMC == &mc)) {
+												data.activeMC = &mc;
+
+												auto& tempParams = data.mcTempParams;
+
+												tempParams.first = nConf.modelParameters[ch.modelID][0];
+												tempParams.second = nConf.modelParameters[ch.modelID][1];
+											}
+											ImGui::TableNextColumn();
+											for (auto& [key, value] : mc.fixConfig) {
+												ImGui::Text(nConf.parameters[key].c_str());
+												ImGui::SameLine();
+												ImGui::Text(": ");
+												ImGui::SameLine();
+												ImGui::Text(std::to_string(value).c_str());
+											}
+											ImGui::TableNextColumn();
+											ImGui::Text(std::to_string(mc.sigma).c_str());
+											ImGui::TableNextColumn();
+											ImGui::Text(std::to_string(mc.iterations).c_str());
+										}
+
+										ImGui::TreePop();
+									}
+
+								}
+							}
+							ImGui::EndTable();
 						}
+						ImGui::EndChild();
 					}
 
 					ImGui::EndTabItem();

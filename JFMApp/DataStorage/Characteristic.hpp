@@ -99,6 +99,7 @@ namespace JFMApp::Data {
 			std::vector<MCData> data{};
 			std::string sim_name{};
 			ParameterMap fixConfig{};
+			size_t iterations{ 0 };
 			double sigma{ 1.0 };
 			Characteristic* parent{ nullptr };
 		};
