@@ -10,9 +10,14 @@ namespace JFMService
     double Chi2ErrorModel::NSCalculateError(const Data &original, const Data &checked)
     {
         double error{0.0};
-        for (const auto &[orig, check] : std::views::zip(original[1], checked[1]))
+        for (const auto& [orig, check] : std::views::zip(original[1], checked[1]))
             error += std::pow((std::log(orig) - std::log(check)), 2) ;
         return error;
+
+        //for (const auto &[orig, check] : std::views::zip(original[1], checked[1]))
+        //    error += std::pow(orig - check, 2) / std::pow(orig, 2.0);
+        //return std::sqrt(error) / original[1].size();
+
     }
 
     double Chi2ErrorModel::CalculateError(const std::span<double> &original, const std::span<double> &checked)

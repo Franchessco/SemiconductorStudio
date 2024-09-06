@@ -176,8 +176,8 @@ namespace JFMService
 		double contract_coeff{ 0.5 };
 		double shrink_coeff{ 0.5 };
 		int numberOfFits{ 1 };
-		double minError{ 0.056};
-		long int maxIteration{ 2000 };
+		double minError{ 0.05};
+		long int maxIteration{ 400 };
 	};
 
 	template <Model M, size_t size>

@@ -32,14 +32,21 @@ namespace JFMService
 
         auto func = [&](double &V, double &I, double &I0, double &A, double &Rsh, double &Rs, double T)
         {
+
             double x = ((I0 * Rs) / (A * k * T)) * std::exp(V / (A * k * T));
             double I_lw = utl::LambertW<0>(x);
             I_lw *= (A * k * T) / Rs;
             I = I_lw + (V - I_lw * Rs) / Rsh;
+            
         };
 
         for (const auto &[V, I] : std::views::zip(data[0], data[1]))
-            func(V, I, I0, A, Rsh, Rs, additionalParameters.Temperature);
+        {
+       /*     if (std::any_of(parameters.begin(), parameters.end(), [&](double item) {return item < 0.0;}))
+                I = 1 / I;
+            else*/
+                func(V, I, I0, A, Rsh, Rs, additionalParameters.Temperature);
+        }
     }
     void FourParameterModel::call( CalculatingData& data)
     {

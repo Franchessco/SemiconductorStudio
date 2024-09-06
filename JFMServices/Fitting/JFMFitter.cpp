@@ -82,21 +82,46 @@ namespace JFMService::Fitters
 															   { return value < 0; });
 			bool bigError = result.getError() > 1 or result.getError()<0;
 			bool iterationCondition = fittingIterationRuns < 5;
+			return false;
 			return (negativeValueParameters or bigError) and iterationCondition;
 		};
 		//! this can be rebuild and templated via model and number of parameters
-		//auto transferFixingConfiguration[&](JFMAdditionalParameters additional) {};
+
 		IVFittingSetup<4> setUp = transferFittingSetUp<4>(input);
 		Data NSDdata = transferFittingData(input.initialData.characteristic);
 		JFMAdditionalParameters additionalParameters = transferAdditionalParameters(input.initialData.additionalParameters, input.fixConfig);
 		NumericStorm::Fitting::Parameters<4> initialPoint = transferInitialPoint<4>(input.initialValues);
+		auto recalculateBounds = [](IVFittingSetup<4>& setUp, NumericStorm::Fitting::Parameters<4>& initial) 
+			{
+				auto min = (NumericStorm::Fitting::SimplexPoint<4>(initial) * 0.1).getParameters().getParameters();
+				auto max = (NumericStorm::Fitting::SimplexPoint<4>(initial) * 10).getParameters().getParameters();
+				setUp.simplexMin = min;
+				setUp.simplexMax = max;
+			};
+		auto recalculateInitialPoint = [](NumericStorm::Fitting::Parameters<4>& initial) 
+			{
+				for (auto& item : initial.getParameters())
+					item *= Random::Float(0.1, 10);
+			};
 		SimplexOptimizationResults<4> results;
+		auto transferFixingConfiguration = [&](const ParameterMap& additional)
+			{
+				auto& destination = results.getParameters();
+				for (const auto& [key,val] : additional)
+					if(additional.at(key))
+						destination[(int)key] = val;
+			};
 		do
 		{
+			if (false)//fittingIterationRuns > 1)
+			{
+				recalculateBounds(setUp, initialPoint);
+				recalculateInitialPoint(initialPoint);
+			}
 			results = fit<FourParameterModel, 4>(setUp, initialPoint, NSDdata, additionalParameters);
 			//initialPoint = results.getParameters();
-			//if(additionalParameters.fixingConfiguration)
-				//initialPoint = 
+			if (additionalParameters.fixingConfiguration)
+				transferFixingConfiguration(input.fixConfig);
 			fittingIterationRuns += 1;
 		} while (checkRepetitionCondition(results));
 

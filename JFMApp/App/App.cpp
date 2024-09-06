@@ -1,7 +1,7 @@
 #include "pch.hpp"
 #include "App.hpp"
 
-std::vector<std::vector<double>> globalNoisyI{};
+std::vector<std::pair<std::vector<double>, std::vector<double>> >globalNoisyI{};
 std::vector<std::vector<double>> globalErrors{};
 
 namespace JFMApp {
@@ -197,8 +197,11 @@ namespace JFMApp {
 
 				ImPlot::SetupAxisScale(ImAxis_Y1, Data::Characteristic::TFL, Data::Characteristic::TFNL);
 
-				if(m_state.browserData.m_characteristics.size() > 1 && globalNoisyI.size())
-					ImPlot::PlotLine("I", m_state.browserData.m_characteristics[1].V.data() + m_state.browserData.m_characteristics[1].dataRange.first, globalNoisyI[curr_c].data(), globalNoisyI[curr_c].size());
+				if (m_state.browserData.m_characteristics.size() > 1 && globalNoisyI.size())
+				{
+					ImPlot::PlotLine("I", m_state.browserData.m_characteristics[1].V.data() + m_state.browserData.m_characteristics[1].dataRange.first, globalNoisyI[curr_c].first.data(), globalNoisyI[curr_c].first.size());
+					ImPlot::PlotLine("I1", m_state.browserData.m_characteristics[1].V.data() + m_state.browserData.m_characteristics[1].dataRange.first, globalNoisyI[curr_c].second.data(), globalNoisyI[curr_c].second.size());
+				}
 			}
 			ImPlot::EndPlot();
 			

@@ -2,13 +2,19 @@
 #include "../Models/JFMErrorModel.hpp"
 #include "../Fitting/JFMFitter.hpp"
 #include "../Models/CalculateData.hpp"
+
+extern std::vector < std::pair < std::vector<double>, std::vector<double> >> globalNoisyI;
+std::mutex g_mutex;
+static int blockNumber = 0;
 namespace JFMService
 {
 	MonteCarloEngine::MonteCarloEngine() {};
 	void MonteCarloEngine::simulateChunk(int startIdx, int chunkSize, const std::shared_ptr<AbstractPreFit>& preFitter,
 		const std::shared_ptr<Fitters::AbstractFitter> fitter, MCInput& input,
-		std::vector<MCResult>& localResults,int numBlock)
+		std::vector<MCResult>& localResults, int numBlock)
 	{
+		blockNumber += 1;
+		int localNumeber = blockNumber;
 		//int blockNumber = startIdx - chunkSize
 		for (int i = 0; i < chunkSize; ++i)
 		{
@@ -20,8 +26,8 @@ namespace JFMService
 			}
 			MCResult result;
 			simulate(preFitter, fitter, input, localResults, i);
-			
-		std::cout << "block:" << numBlock<<" idx: "<<i << std::endl;
+			//if(i%20 == 0)
+				std::cout << "block:" << localNumeber << " idx: " << i << std::endl;
 		}
 	};
 #define MULTI_THREAD  1;
@@ -29,7 +35,7 @@ namespace JFMService
 	static int num = 0;
 	void MonteCarloEngine::Simulate(const MCInput& input, std::function<void(MCOutput&&)> callback)
 	{
-		int chunkSize = (input.iterations / 24)+1; //41
+		int chunkSize = (input.iterations / 14) + 1; //41
 		std::jthread thread{
 			[&]()
 			{
@@ -43,15 +49,14 @@ namespace JFMService
 				std::vector<std::future<std::vector<MCResult>>> futures;
 				int numChunks = (input.iterations + chunkSize - 1) / chunkSize; //25
 
-				std::mutex resultMutex;
 				std::vector<MCResult> finalResults(input.iterations);
-				for (int chunk = 0; chunk < numChunks; ++chunk) 
+				for (int chunk = 0; chunk < numChunks; ++chunk)
 				{
 					int startIdx = chunk * chunkSize;
 					futures.push_back(std::async(std::launch::async,
 						[&, startIdx]()
 						{
-							
+
 							std::vector<MCResult> localResults(chunkSize);
 							simulateChunk(startIdx, chunkSize, preFitter, fitter, output.inputData, localResults,chunk);
 							return localResults; // Return local results
@@ -61,34 +66,36 @@ namespace JFMService
 
 				for (int chunk = 0; chunk < numChunks; ++chunk) {
 					auto localResults = futures[chunk].get(); // Wait for and retrieve local results
-					std::lock_guard<std::mutex> lock(resultMutex);
 					std::copy(localResults.begin(), localResults.end(), output.mcResult.begin() + (chunk * chunkSize));
 				}
 
 				auto end = std::chrono::high_resolution_clock().now();
-				std::cout << "time: " << (end - start).count() / 1000 << " s "
-						  << (((end - start).count() / 1000) / input.iterations) << " ms per fit" << std::endl;
+				auto miliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+				auto perIteration = miliseconds / input.iterations;
+				auto seconds= miliseconds / 1000;
+				std::cout << "time: " << seconds<< " s "
+						  << perIteration<< " ms per fit" << std::endl;
 
 				if (callback)
 					callback(std::move(output));
 			}
 		};
-		
+
 	}
 
 	void MonteCarloEngine::generateNoise(double& value, double factor)
 	{
-		double noise= (value * factor / 100);
+		double noise = (value * factor / 100);
 		double copy = value;
 		//std::uniform_real_distribution<double> distribution{ -1,1 };
-		std::normal_distribution<double> distribution{ 0,1};
+		std::normal_distribution<double> distribution{ 0,1 };
 		//std::cout << distribution(m_generator)*sigma << std::endl;
 		value += distribution(m_generator) * noise;
 		//value = value +  distribution(m_generator)*(factor / 100) * value ;
 		//value = std::abs(value);
-		
+
 	}
-	void MonteCarloEngine::simulate(const std::shared_ptr<AbstractPreFit>& preFitter,const std::shared_ptr<Fitters::AbstractFitter> fitter, MCInput& input,std::vector<MCResult>& results,int i)
+	void MonteCarloEngine::simulate(const std::shared_ptr<AbstractPreFit>& preFitter, const std::shared_ptr<Fitters::AbstractFitter> fitter, MCInput& input, std::vector<MCResult>& results, int i)
 	{
 		MCResult result;
 		MCInput copied{ input };
@@ -96,31 +103,51 @@ namespace JFMService
 		std::vector<double> copiedCurrent{ characteristic.currentData.begin(),characteristic.currentData.end() };
 		std::vector<double> copiedVoltage{ characteristic.voltageData.begin(),characteristic.voltageData.end() };
 		copied.startingData.initialData.characteristic.currentData = { copiedCurrent.begin(),copiedCurrent.end() };
-
+		auto checkParams = [](const ParameterMap& PMap) {
+			return std::any_of(PMap.begin(), PMap.end(), [](const std::pair<const int, double>& pair) {
+				return pair.second < 0;
+				});
+			};
+		auto outOfBounds = [](const ParameterMap& PMap, const ParamBounds& bounds)
+			{
+				for(const auto& [key,val]:PMap)
+				{
+					if (val < bounds.at(key).first or val > bounds.at(key).second)
+						return true;
+				}
+				return false;
+			};
 		auto callback = [&](const ParameterMap&& fittingResult)
 			{ result.foundParameters = fittingResult; };
+		std::vector<double> calculated;
+		do {
+			copiedCurrent = { characteristic.currentData.begin(),characteristic.currentData.end() };
+			copied.startingData.initialData.characteristic.currentData = { copiedCurrent.begin(),copiedCurrent.end() };
+			for (auto& I : copiedCurrent)
+				generateNoise(I, copied.noise);
+			copied.startingData.initialValues = preFitter->Estimate(copied.startingData.initialData);
+			fitter->Fit(copied.startingData, callback);
+			calculateFittingError(input, result, calculated);
 
-		for (auto& I : copiedCurrent)
-			generateNoise(I, copied.noise);
-		
-		copied.startingData.initialValues = preFitter->Estimate(copied.startingData.initialData);
-		fitter->Fit(copied.startingData, callback);
-		
-		calculateFittingError(input, result);
+		} while (result.error > 23.5 or outOfBounds(result.foundParameters,input.startingData.bounds)); // and any of the parameters is negative
+		g_mutex.lock();
+
+		globalNoisyI.push_back({ copiedCurrent, calculated });
+		g_mutex.unlock();
 		results[i] = result;
-/*		num += 1;
-		std::cout << "iteration: " << num << std::endl;*/
+		/*		num += 1;
+				std::cout << "iteration: " << num << std::endl;*/
 	}
-	void MonteCarloEngine::calculateFittingError(const MCInput& input, MCResult& result)
+	void MonteCarloEngine::calculateFittingError(const MCInput& input, MCResult& result, std::vector<double>& calculated)
 	{
-		auto IerrorModel = [&](double trueI, double fittedI, double noise) 
+		auto IerrorModel = [&](double trueI, double fittedI, double noise)
 			{
-				double sigma = fittedI* noise;
+				double sigma = fittedI * noise;
 				return std::pow(((fittedI - trueI) / sigma), 2);
 			};
 		CalculatingData data;
 		DataCalculator dataCalculator;
-		
+
 		Chi2ErrorModel errorModel;
 		auto characteristic = input.startingData.initialData.characteristic;
 		std::vector<double> copiedCurrent{ characteristic.currentData.begin(),characteristic.currentData.end() };
@@ -131,16 +158,17 @@ namespace JFMService
 		data.characteristic = { {copiedVoltage.begin(),copiedVoltage.end()}, {copiedCurrent.begin(),copiedCurrent.end()} };
 		data.modelID = input.startingData.initialData.modelID;
 
-		
+
 		std::vector<double> trueCurrentVector{};
 		trueCurrentVector.resize(copiedCurrent.size());
 		CalculatingData trueData = data;
 		trueData.parameters = input.trueParameters;
 		trueData.characteristic.currentData = std::span<double>{ trueCurrentVector };
-		
+
 		dataCalculator.CalculateData(data);
 		dataCalculator.CalculateData(trueData);
-		std::span<double> trueCurrent{trueCurrentVector};
+		calculated = copiedCurrent;
+		std::span<double> trueCurrent{ trueCurrentVector };
 		std::span<double> fittedCurrent = data.characteristic.currentData;
 		double accumulatedError = 0.0;
 		double noise = input.noise / 100.0;
