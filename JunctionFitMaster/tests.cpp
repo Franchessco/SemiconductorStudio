@@ -4,10 +4,10 @@
 // #include "DataManager.hpp"
 void Tests::test()
 {
-    //testDataManager();
+    testDataManager();
     // testModel();
     // testYAML();
-    //testFitting();
+    // testFitting();
     testAutoRange();
 }
 
@@ -53,7 +53,7 @@ void Tests::testYAMLLoading()
     std::cout << "Loading YAML config " << std::endl;
     DataManager manager;
     LoaderOutput loaded;
-    manager.Load("testDump.yaml", [&](LoaderOutput output)
+    manager.Load("testLoad.yaml", [&](LoaderOutput output)
                  { loaded = std::move(output); });
     MCOutput out = *(loaded.mcData);
 };
@@ -96,7 +96,7 @@ void Tests::testYAMLDumping()
     mcInOutput.iterations = 1e4;
     mcInOutput.noise = 1;
     mcInOutput.trueParameters = trueMap;
-
+    mcInOutput.characteristicBounds = {5, 250};
     std::vector<MCResult> results;
     MCResult onePoint;
     std::vector<double> mcResult{2, 6e-8, 5e-6, 5e6};

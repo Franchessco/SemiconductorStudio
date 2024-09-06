@@ -2,6 +2,9 @@ config:
   model: "FourParameter"
   relativePath: ""
   CharacteristicName: "Example Name"
+  CharacteristicLowRange: 5
+  CharacteristicUpRange: 255
+
   idealParameters: [1, 1.0e-8, 5.0e-5, 5.0e5]
   Temperature: 330
   numberOfIterations: 3

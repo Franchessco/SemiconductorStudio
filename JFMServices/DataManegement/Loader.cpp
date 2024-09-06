@@ -13,7 +13,7 @@ namespace JFMService
 	{
 		loaders[".dat"] = std::bind(&CharacteristicLoader::loadDatContent, this, std::placeholders::_1);
 	};
-	LoaderOutput CharacteristicLoader::Load(const std::filesystem::path& path)
+	LoaderOutput CharacteristicLoader::Load(const std::filesystem::path &path)
 	{
 		if (!CheckExtentionCompatibility(path))
 			return LoaderOutput();
@@ -27,7 +27,7 @@ namespace JFMService
 		return output;
 	};
 
-	void CharacteristicLoader::readFileContent(const std::filesystem::path& path, std::string& content)
+	void CharacteristicLoader::readFileContent(const std::filesystem::path &path, std::string &content)
 	{
 		std::ifstream file(path);
 		if (file)
@@ -38,7 +38,7 @@ namespace JFMService
 			file.close();
 		}
 	};
-	void CharacteristicLoader::parseContent(const std::filesystem::path& path, std::string& content, LoaderOutput& output)
+	void CharacteristicLoader::parseContent(const std::filesystem::path &path, std::string &content, LoaderOutput &output)
 	{
 		auto ex = path.extension().string();
 		auto data = loaders.at(ex)(content);
@@ -48,14 +48,14 @@ namespace JFMService
 		output.success = true;
 	}
 
-	std::vector<std::vector<double>> CharacteristicLoader::loadDatContent(std::string& content)
+	std::vector<std::vector<double>> CharacteristicLoader::loadDatContent(std::string &content)
 	{
 		std::vector<std::string> lines = utils::spliting(content, "\n");
 		int size = lines.size();
 		std::vector<double> voltages{}, currents{}, densityCurrents{};
-		std::vector<std::vector<double>> items = { voltages, currents, densityCurrents };
+		std::vector<std::vector<double>> items = {voltages, currents, densityCurrents};
 
-		for (const auto& line : lines)
+		for (const auto &line : lines)
 		{
 			auto splittedLine = utils::spliting(line, "\t");
 			if (splittedLine.size() == 3)
@@ -68,14 +68,13 @@ namespace JFMService
 		return items;
 	}
 
-
-	bool CharacteristicLoader::CheckExtentionCompatibility(const std::filesystem::path& path)
+	bool CharacteristicLoader::CheckExtentionCompatibility(const std::filesystem::path &path)
 	{
 		bool found = loaders.find(path.extension().string()) != loaders.end();
 		return found;
 	};
 
-	double CharacteristicLoader::readTemperature(const std::string& name)
+	double CharacteristicLoader::readTemperature(const std::string &name)
 	{
 		auto it = name.find("T");
 		if (it != std::string::npos)
@@ -83,10 +82,10 @@ namespace JFMService
 
 		return -1;
 	};
-	std::string CharacteristicLoader::readName(const std::filesystem::path& path) { return path.stem().string(); };
+	std::string CharacteristicLoader::readName(const std::filesystem::path &path) { return path.stem().string(); };
 
 	//! MCLoader
-	LoaderOutput MonteCarloResultLoader::Load(const std::filesystem::path& path)
+	LoaderOutput MonteCarloResultLoader::Load(const std::filesystem::path &path)
 	{
 
 		std::ifstream stream(path.c_str());
@@ -109,20 +108,20 @@ namespace JFMService
 		output.mcData = std::make_unique<FittingService::MCOutput>(loadedData);
 		return output;
 	}
-	bool MonteCarloResultLoader::CheckExtentionCompatibility(const std::filesystem::path& path)
+	bool MonteCarloResultLoader::CheckExtentionCompatibility(const std::filesystem::path &path)
 	{
 		return path.extension() == ".yaml";
 	}
-	void MonteCarloResultLoader::loadConfig(const YAML::Node& config, MCInput& destination)
+	void MonteCarloResultLoader::loadConfig(const YAML::Node &config, MCInput &destination)
 	{
 
-		auto modelNameToID = [](const std::string& name)
-			{
-				if (name == "FourParameterModel")
-					return Model4P;
-				if (name == "SixParameterModel")
-					return Model6P;
-			};
+		auto modelNameToID = [](const std::string &name)
+		{
+			if (name == "FourParameterModel")
+				return Model4P;
+			if (name == "SixParameterModel")
+				return Model6P;
+		};
 
 		std::string model = config["model"].as<std::string>();
 		std::string relativePath = config["relativePath"].as<std::string>();
@@ -137,33 +136,35 @@ namespace JFMService
 		std::vector<double> fixingValues = config["fixedValues"].as<std::vector<double>>();
 		double noise = config["noise"].as<double>();
 
+		std::pair<double, double> characteristicIndexes{config["CharacteristicLowRange"].as<int>(), config["CharacteristicUpRange"].as<int>()};
+
 		destination.startingData.initialData.modelID = modelNameToID(model);
 		destination.relPath = relativePath;
 		destination.startingData.name = name;
 		transferParameters(destination.trueParameters, order, idealParameters);
 		destination.startingData.initialData.additionalParameters[Fitters::AdditionalParametersID::Temperature] = Temperature;
 		destination.iterations = iterationNumber;
-
+		destination.characteristicBounds = characteristicIndexes;
 		// FixingConfiguration fixingConfig = (FixingConfiguration)0;
 		ParameterMap additional;
 
-		for (const auto& [name, value] : std::views::zip(fixingConfiguration, fixingValues))
+		for (const auto &[name, value] : std::views::zip(fixingConfiguration, fixingValues))
 			additional[parameterNameToID(name)] = value;
 		destination.startingData.fixConfig = additional;
 		destination.noise = noise;
 	}
-	std::vector<MCResult> MonteCarloResultLoader::loadFittingResults(const YAML::Node& node, std::vector<ParameterName>& order, size_t size)
+	std::vector<MCResult> MonteCarloResultLoader::loadFittingResults(const YAML::Node &node, std::vector<ParameterName> &order, size_t size)
 	{
 		using namespace FittingService;
 		auto transferArrayToMap = [&](std::vector<double> params)
-			{
-				ParameterMap parameters;
-				transferParameters(parameters, { "A","I0","Rs","Rsh","alpha","Rsh2" }, params);
-				return parameters;
-			};
-		std::vector<MCResult> result{ size };
+		{
+			ParameterMap parameters;
+			transferParameters(parameters, {"A", "I0", "Rs", "Rsh", "alpha", "Rsh2"}, params);
+			return parameters;
+		};
+		std::vector<MCResult> result{size};
 		MCResult singleResult;
-		for (const auto& [item, dst] : std::views::zip(node, result))
+		for (const auto &[item, dst] : std::views::zip(node, result))
 		{
 			auto i = item["result"]["parameters"].as<std::vector<double>>();
 			singleResult.foundParameters = transferArrayToMap(i);
@@ -172,9 +173,9 @@ namespace JFMService
 		}
 		return result;
 	}
-	void MonteCarloResultLoader::transferParameters(ParameterMap& destination, const std::vector<ParameterName> names, const std::vector<double> values)
+	void MonteCarloResultLoader::transferParameters(ParameterMap &destination, const std::vector<ParameterName> names, const std::vector<double> values)
 	{
-		for (const auto& [name, value] : std::views::zip(names, values))
+		for (const auto &[name, value] : std::views::zip(names, values))
 			destination[parameterNameToID(name)] = value;
 	};
 

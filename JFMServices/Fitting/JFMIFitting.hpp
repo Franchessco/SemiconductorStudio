@@ -73,6 +73,7 @@ namespace JFMService::FittingService
 		ParameterMap trueParameters{};
 		size_t iterations{};
 		double noise{1.0};
+		std::pair<double, double> characteristicBounds;
 	};
 
 	struct MCResult
@@ -99,6 +100,6 @@ namespace JFMService::FittingService
 		virtual void Fit(const FittingInput &input, std::function<void(ParameterMap &&)> callback) = 0;
 
 		virtual void Simulate(const MCInput &input, std::function<void(MCOutput &&)> callback) = 0;
-		virtual double GetUncertainty(const MCOutput &output,  int level, ParameterID id) = 0;
+		virtual double GetUncertainty(const MCOutput &output, int level, ParameterID id) = 0;
 	};
 }

@@ -19,6 +19,8 @@ config:
     - Rs
     - Rsh
   noise: 1
+  CharacteristicLowRange: 5
+  CharacteristicUpRange: 250
 data:
   - result:
       parameters:

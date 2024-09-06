@@ -37,15 +37,15 @@ namespace JFMService
     {
         MCOutput data = *(toSave).mcData;
         YAML::Emitter out;
-        //out<< YAML::BeginMap << YAML::Key << "general" << YAML::Value;
+        // out<< YAML::BeginMap << YAML::Key << "general" << YAML::Value;
         emitConfig(out, data.inputData);
         emitMCSimulation(out, data.mcResult);
-        //out << YAML::EndMap;
+        // out << YAML::EndMap;
         std::ofstream output(path);
         output << out.c_str();
-        //LoaderOutput toCallback(toSave);
-        //if (callback)
-        //    callback(toCallback);
+        // LoaderOutput toCallback(toSave);
+        // if (callback)
+        //     callback(toCallback);
     };
 
     void MonteCarloResultDumper::Save(const std::vector<path> &path, const std::vector<LoaderOutput> &toSave, const VectorCallback &callback)
@@ -53,7 +53,7 @@ namespace JFMService
     }
     void MonteCarloResultDumper::emitConfig(YAML::Emitter &emitter, const MCInput &toEmit)
     {
-        
+
         emitter << YAML::BeginMap;
         emitter << YAML::Key << "config" << YAML::Value;
         emitter << YAML::BeginMap;
@@ -83,15 +83,17 @@ namespace JFMService
         }
         emitter << YAML::EndSeq;
         emitter << YAML::Key << "noise" << YAML::Value << toEmit.noise;
+        emitter << YAML::Key << "CharacteristicLowRange" << YAML::Value << toEmit.characteristicBounds.first;
+        emitter << YAML::Key << "CharacteristicUpRange" << YAML::Value << toEmit.characteristicBounds.second;
         emitter << YAML::EndMap;
-        //emitter << YAML::EndMap;
+        // emitter << YAML::EndMap;
     }
-    void MonteCarloResultDumper::emitMCSimulation(YAML::Emitter& emitter, const std::vector<MCResult>& simulation)
+    void MonteCarloResultDumper::emitMCSimulation(YAML::Emitter &emitter, const std::vector<MCResult> &simulation)
     {
         // data
         emitter << YAML::Key << "data" << YAML::Value;
         emitter << YAML::BeginSeq;
-        for (const auto& result : simulation)
+        for (const auto &result : simulation)
         {
             // result
             emitter << YAML::BeginMap;

@@ -2,8 +2,11 @@
 #include "AppRunner.hpp"
 #include "JFMFitting.hpp"
 #include "DataManager.hpp"
+#include "tests.hpp"
 int main()
 {
+	Tests::test();
+#if 0
 	JFMApp::AppRunner runner{};
 
 
@@ -14,6 +17,6 @@ int main()
 	runner.addApp(bundle);
 
 	runner.run();
-
+#endif
 	return 0;
 }
