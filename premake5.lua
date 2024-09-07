@@ -20,6 +20,7 @@ group "Dependencies"
     include "./Vendor/imgui"
     include "./Vendor/implot"
     include "./Vendor/yaml-cpp"
+    include "./Vendor/NumericStorm/NumericStorm"
 
 
 
