@@ -10,7 +10,7 @@ namespace JFMApp::Data
 		I = loaded.Data[CharacteristicData::Current];
 		T = loaded.Temperature;
 		name = loaded.Name;
-		modelID = 3;
+		modelID = 5;
 		savedModelID = modelID;
 		initState();
 	}
@@ -125,7 +125,7 @@ namespace JFMApp::Data
 		sim.fixConfig = out.inputData.startingData.fixConfig;
 		sim.sim_name = out.inputData.relPath.filename().string();
 		sim.parent = this;
-		//std::scoped_lock lk{ *mcMutex };
+		std::scoped_lock lk{ *mcMutex };
 
 		auto d = std::find_if(mcData.begin(), mcData.end(), [&](MCSimulation& d) {
 			return d.fixConfig == sim.fixConfig;

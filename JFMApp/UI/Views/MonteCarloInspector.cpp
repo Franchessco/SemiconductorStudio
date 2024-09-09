@@ -92,7 +92,7 @@ namespace JFMApp::Views {
 		if (ImPlot::BeginPlot(mc.name.c_str(), plotAreaSize, Data::PlotData::plotSettings.flags)) {
 
 			ImPlot::SetupAxes(prX.c_str(), prY.c_str(), Data::PlotData::plotSettings.xFlags, Data::PlotData::plotSettings.yFlags);
-
+			
 			for (auto& d : mc.mc.data) {
 				ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, -1, mc.sig[getMCColor(d.error, mc.mc.fixConfig.size())], -1.0f, mc.sig[getMCColor(d.error, mc.mc.fixConfig.size())]);
 
@@ -282,6 +282,7 @@ namespace JFMApp::Views {
 								ImGui::TableHeadersRow();
 								for (auto& ch : *(data.characteristics)) {
 									if (!ch.checked) continue;
+									std::scoped_lock lk{ *ch.mcMutex };
 									ImGui::TableNextRow();
 									ImGui::TableNextColumn();
 

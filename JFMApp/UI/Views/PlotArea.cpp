@@ -11,7 +11,7 @@ namespace JFMApp::Views {
 			std::swap(lower_bound, upper_bound);
 		}
 
-		int start_exponent = std::ceil(std::log10(lower_bound));
+		int start_exponent = std::ceil(std::log10(lower_bound)) - 1;
 		int end_exponent = std::floor(std::log10(upper_bound));
 
 		for (int i = start_exponent; i <= end_exponent; ++i) {
@@ -60,13 +60,55 @@ namespace JFMApp::Views {
 						if (data.logY && limits.Y.Min > 0.0) {
 							std::vector<double> y_ticks = GeneratePowersOf10(limits.Y.Min, limits.Y.Max);
 
-							ImPlot::SetupAxisTicks(ImAxis_Y1, y_ticks.data(), y_ticks.size());
+
+							std::vector<const char*> y_labels;
+							std::vector<std::string> label_storage;
+
+							for (double value : y_ticks) {
+
+								double log_val = std::log10(value);
+								if (std::floor(log_val) == log_val) {
+									int exponent = std::log10(value); 
+									label_storage.push_back("1e" + std::to_string(exponent)); 
+								}
+								else {
+									label_storage.push_back(" ");
+								}
+							}
+
+							for (auto& str : label_storage) {
+								y_labels.push_back(str.c_str());
+							}
+
+
+							ImPlot::SetupAxisTicks(ImAxis_Y1, y_ticks.data(), y_ticks.size(), y_labels.data());
 						}
 
 						if (data.logX && limits.X.Min > 0.0) {
 							std::vector<double> x_ticks = GeneratePowersOf10(limits.X.Min, limits.X.Max);
 
-							ImPlot::SetupAxisTicks(ImAxis_X1, x_ticks.data(), x_ticks.size());
+							std::vector<const char*> x_labels;
+							std::vector<std::string> label_storage;
+
+							for (double value : x_ticks) {
+
+								double log_val = std::log10(value);
+								if (std::floor(log_val) == log_val) {
+									int exponent = std::log10(value);
+									label_storage.push_back("1e" + std::to_string(exponent));
+								}
+								else {
+									label_storage.push_back(" ");
+								}
+							}
+
+							for (auto& str : label_storage) {
+								x_labels.push_back(str.c_str());
+							}
+
+
+
+							ImPlot::SetupAxisTicks(ImAxis_X1, x_ticks.data(), x_ticks.size(), x_labels.data());
 						}
 
 						

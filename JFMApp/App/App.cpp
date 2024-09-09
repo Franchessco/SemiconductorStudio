@@ -2,7 +2,7 @@
 #include "App.hpp"
 
 std::vector<std::pair<std::vector<double>, std::vector<double>> >globalNoisyI{};
-std::vector<std::vector<double>> globalErrors{};
+std::vector<std::pair<std::vector<double>, std::vector<double>>> globalErrors{};
 
 namespace JFMApp {
 
@@ -216,16 +216,19 @@ namespace JFMApp {
 			ImVec2 s = { ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y };
 			if (ImPlot::BeginPlot("RT Error", s))
 			{
-				ImPlot::SetupAxes("N", "Err", Data::PlotData::plotSettings.xFlags, Data::PlotData::plotSettings.yFlags);
+				ImPlot::SetupAxes("LOG(V)", "d(LOG(I))", Data::PlotData::plotSettings.xFlags, Data::PlotData::plotSettings.yFlags);
 
 				//ImPlot::SetupAxisScale(ImAxis_Y1, Data::Characteristic::TFL, Data::Characteristic::TFNL);
 				
 				if (globalErrors.size())
-					ImPlot::PlotLine("E", globalErrors[curr_c].data(), globalErrors[curr_c].size());
+					ImPlot::PlotLine("D", globalErrors[0].first.data(), globalErrors[0].second.data(), globalErrors[0].first.size());
+
+				if (globalErrors.size())
+					ImPlot::PlotLine("O", globalErrors[1].first.data(), globalErrors[1].second.data(), globalErrors[1].first.size());
 			}
 			ImPlot::EndPlot();
 
-			ImGui::SliderInt("Char", &curr_c, 0, globalErrors.size() - 1);
+			//ImGui::SliderInt("Char", &curr_c, 0, globalErrors.size() - 1);
 		}
 		ImGui::End();
 
@@ -325,10 +328,14 @@ namespace JFMApp {
 							temp.savedUseBounds = true;
 							for (const auto& [k, v] : eParams)
 							{
-								if (k != 0)
+								if (k != 0 && k != 4)
 								{
 									temp.savedBounds[k].first = 1.0 * std::pow(10.0, std::floor(std::log10(v)) - 1);
 									temp.savedBounds[k].second = 9.0 * std::pow(10.0, std::floor(std::log10(v)) + 1);
+								}
+								else if (k == 4) {
+									temp.savedBounds[k].first = 1;
+									temp.savedBounds[k].second = 5;
 								}
 								else
 								{

@@ -37,7 +37,7 @@ namespace JFMService
 	{
 		int chunkSize = (input.iterations / 14) + 1; //41
 		std::jthread thread{
-			[&]()
+			[=]()
 			{
 				MCOutput output;
 				output.inputData = input;
@@ -80,6 +80,8 @@ namespace JFMService
 					callback(std::move(output));
 			}
 		};
+
+		thread.detach();
 
 	}
 

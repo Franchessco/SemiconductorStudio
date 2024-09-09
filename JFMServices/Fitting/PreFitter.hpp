@@ -33,6 +33,20 @@ namespace JFMService
 		double adjustCoefficient(double dV);
 	};
 
+	class SixParameterModelPreFit :public AbstractPreFit
+	{
+	public:
+		SixParameterModelPreFit();
+		virtual FittingService::ParameterMap Estimate(const FittingService::EstimateInput& input) override;
+		std::pair<size_t, size_t> rangeData(const FittingService::PlotData& characteristic) { return this->RangeData(characteristic); };
+
+	private:
+		std::vector<std::pair<double, double>> m_AMultiplier;
+
+	private:
+		double adjustCoefficient(double dV);
+	};
+
 	class PreFitter
 	{
 		using PreFitterMap = std::unordered_map<FittingService::ModelID, std::shared_ptr<AbstractPreFit>>;
