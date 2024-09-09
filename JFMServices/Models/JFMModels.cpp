@@ -55,7 +55,7 @@ namespace JFMService
         NSData[1] = std::vector<double>{ data.characteristic.currentData.begin(),data.characteristic.currentData.end() };
         NumericStorm::Fitting::Parameters<4> params;
         for (const auto& [id, val] : data.parameters)
-            params[id] = val;
+            if(id < 4) params[id] = val;
         JFMAdditionalParameters additional;
         additional.Temperature = (*data.additionalParameters.begin()).second;
         current(NSData, params, additional);
@@ -83,7 +83,7 @@ namespace JFMService
             double x = ((I0 * Rs) / (A * k * T)) * std::exp(V / (A * k * T));
             double I_lw = utl::LambertW<0>(x);
             I_lw *= (A * k * T) / Rs;
-            double additionalFactor = std::pow((V - I_lw * Rs), alpha) / Rsh2;
+            double additionalFactor = std::pow((V /*- I_lw * Rs*/), alpha) / Rsh2;
             I = I_lw + (V - I_lw * Rs) / Rsh + additionalFactor;
         };
 

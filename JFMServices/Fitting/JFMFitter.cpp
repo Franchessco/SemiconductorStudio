@@ -146,7 +146,7 @@ namespace JFMService::Fitters
 					{ return value < 0; });
 				bool bigError = result.getError() > 1 or result.getError() < 0;
 				bool iterationCondition = fittingIterationRuns < 5;
-				return false;
+				//return false;
 				return (negativeValueParameters or bigError) and iterationCondition;
 			};
 		//! this can be rebuild and templated via model and number of parameters
@@ -183,7 +183,9 @@ namespace JFMService::Fitters
 				recalculateInitialPoint(initialPoint);
 			}
 			results = fit<SixParameterModel, 6>(setUp, initialPoint, NSDdata, additionalParameters);
-			//initialPoint = results.getParameters();
+			if(!std::ranges::any_of(results.getParameters(), [](double value)
+				{ return value < 0; }))
+				initialPoint = results.getParameters();
 			if (additionalParameters.fixingConfiguration)
 				transferFixingConfiguration(input.fixConfig);
 			fittingIterationRuns += 1;

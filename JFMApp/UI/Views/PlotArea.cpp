@@ -422,8 +422,8 @@ namespace JFMApp::Views {
 						ImGui::TableNextRow();
 						for (auto& [id, value] : act.tunedParameters) {
 							float val = value;
-							float min = act.fittedParameters[id] / 1000.0;
-							float max = act.fittedParameters[id] * 1000.0;
+							float min = act.fittedParameters[id] / 10.0;
+							float max = act.fittedParameters[id] * 10.0;
 
 							ImGui::TableNextColumn();
 							std::string cname = "##" + data.paramConfig->parameters[id];
@@ -431,7 +431,7 @@ namespace JFMApp::Views {
 								if (act.tempParametersActive[id]) data.m_tuneCallback();
 
 							ImGui::SameLine();
-							ImGuiSliderFlags flags = ImGuiSliderFlags_Logarithmic;
+							ImGuiSliderFlags flags = ImGuiSliderFlags_Logarithmic & ImGuiSliderFlags_None;
 
 							//and data.paramConfig->parameters[id] != std::string{ "A" }
 							//if (data.paramConfig->parameters[id] == std::string{ "I0" } )

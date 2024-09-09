@@ -9,6 +9,120 @@ namespace JFMApp {
 	using namespace JFMService::DataManagementService;
 	using namespace JFMService::FittingService;
 
+
+
+	std::vector<Data::Characteristic> generateTest(JFMService::FittingService::IFitting& fitter, double A, double I0, double Rs, JFMService::DataManagementService::CharacteristicData ivdata) {
+		size_t numRsh = 5 * (9 - 2);
+		size_t numAlpha = 20;
+		size_t num = 600;
+
+		std::vector<Data::Characteristic> characteristics{};
+
+		std::vector<std::pair<double, double>> paramConfigs{};
+
+		for (double p = 7.0; p < 9.0; p++) {
+			for (double Rsh = std::pow(10.0, p); Rsh <= std::pow(10.0, p + 1.0); Rsh += (std::pow(10.0, p + 1.0) - std::pow(10.0, p)) / 5.0) {
+				for (double alpha = 1.0; alpha <= 5.0; alpha += ((5.0 - 1.0) / (double)numAlpha))
+				{
+					paramConfigs.push_back({ Rsh, alpha });
+				}
+			}
+		}
+
+		characteristics.resize(num);
+		size_t i = 0;
+
+
+		for (auto& c : characteristics) {
+			if (i == 150) break;
+			c = Data::Characteristic{ ivdata };
+			c.nConfig = fitter.GetConfiguration();
+
+			c.modelID = 5;
+			//do preFit
+
+			//range the data
+			std::mt19937 m_generator{ std::random_device{}() };
+
+			auto generateNoise = [&](double& value, double factor)
+				{
+					double noise = (value * factor / 100);
+					double copy = value;
+					//std::uniform_real_distribution<double> distribution{ -1,1 };
+					std::normal_distribution<double> distribution{ 0,1 };
+					//std::cout << distribution(m_generator)*sigma << std::endl;
+					value += distribution(m_generator) * noise;
+					//value = value +  distribution(m_generator)*(factor / 100) * value ;
+					//value = std::abs(value);
+
+				};
+
+
+			c.dataRange = fitter.RangeData({ c.V, c.I });
+
+			//estimate
+
+			std::unordered_map<ParameterID, double> eParams{ {0, A}, {1, I0}, {2, Rs}, {3, paramConfigs[i].first}, {4, paramConfigs[i].second}, {5, paramConfigs[i].first} };
+
+			c.savedInitialGuess = eParams;
+			c.savedUseInitial = true;
+			//fit
+			c.savedUseBounds = true;
+
+
+			CalculatingData cData = c.getCalculatingData();
+			cData.parameters = c.savedInitialGuess;
+			fitter.CalculateData(cData);
+			std::span<double> I = std::span<double>{ c.I.data() + c.dataRange.first , c.fittedI.size() };
+			for (const auto& [src, dst] : std::views::zip(c.fittedI, I))
+				dst = src;
+
+
+
+
+			std::transform(I.begin(), I.end(), I.begin(), [&](double x) {
+				double factor = 0.0;
+				generateNoise(x, factor);
+				return x;
+				});
+
+
+			c.tunedParameters = eParams;
+			c.savedInitialGuess = fitter.Estimate(c.getEstimateInput());
+			c.savedUseInitial = true;
+			//fit
+			c.savedUseBounds = true;
+			for (const auto& [k, v] : eParams)
+			{
+				if (k != 0 && k != 4 && k != 5)
+				{
+					c.savedBounds[k].first = 1.0 * std::pow(10.0, std::floor(std::log10(v)) - 1);
+					c.savedBounds[k].second = 9.0 * std::pow(10.0, std::floor(std::log10(v)) + 1);
+				}
+				else if (k == 4) {
+					c.savedBounds[k].first = 0.5;
+					c.savedBounds[k].second = 6;
+				}
+				else if (k == 5) {
+					c.savedBounds[k].first = 10;
+					c.savedBounds[k].second = 1e7;
+				}
+				else
+				{
+					c.savedBounds[k].first = 1;
+					c.savedBounds[k].second = 5;
+				}
+			}
+			i++;
+		}
+
+
+
+		return characteristics;
+	}
+
+
+
 	App::App(const AppServiceBundle& services)
 	{
 		m_numerics = services.numerics;
@@ -204,7 +318,7 @@ namespace JFMApp {
 				}
 			}
 			ImPlot::EndPlot();
-			
+
 			ImGui::SliderInt("Char", &curr_c, 0, globalNoisyI.size() - 1);
 		}
 		ImGui::End();
@@ -219,7 +333,7 @@ namespace JFMApp {
 				ImPlot::SetupAxes("LOG(V)", "d(LOG(I))", Data::PlotData::plotSettings.xFlags, Data::PlotData::plotSettings.yFlags);
 
 				//ImPlot::SetupAxisScale(ImAxis_Y1, Data::Characteristic::TFL, Data::Characteristic::TFNL);
-				
+
 				if (globalErrors.size())
 					ImPlot::PlotLine("D", globalErrors[0].first.data(), globalErrors[0].second.data(), globalErrors[0].first.size());
 
@@ -316,6 +430,21 @@ namespace JFMApp {
 							//do preFit
 
 							//range the data
+							std::mt19937 m_generator{ std::random_device{}() };
+
+							auto generateNoise = [&](double& value, double factor)
+								{
+									double noise = (value * factor / 100);
+									double copy = value;
+									//std::uniform_real_distribution<double> distribution{ -1,1 };
+									std::normal_distribution<double> distribution{ 0,1 };
+									//std::cout << distribution(m_generator)*sigma << std::endl;
+									value += distribution(m_generator) * noise;
+									//value = value +  distribution(m_generator)*(factor / 100) * value ;
+									//value = std::abs(value);
+
+								};
+
 
 							temp.dataRange = m_numerics->RangeData({ temp.V, temp.I });
 
@@ -328,14 +457,67 @@ namespace JFMApp {
 							temp.savedUseBounds = true;
 							for (const auto& [k, v] : eParams)
 							{
-								if (k != 0 && k != 4)
+								if (k != 0 && k != 4 && k != 5)
 								{
 									temp.savedBounds[k].first = 1.0 * std::pow(10.0, std::floor(std::log10(v)) - 1);
 									temp.savedBounds[k].second = 9.0 * std::pow(10.0, std::floor(std::log10(v)) + 1);
 								}
 								else if (k == 4) {
 									temp.savedBounds[k].first = 1;
+									temp.savedBounds[k].second = 3;
+								}
+								else if (k == 5) {
+									temp.savedBounds[k].first = 100;
+									temp.savedBounds[k].second = 1e7;
+								}
+								else
+								{
+									temp.savedBounds[k].first = 1;
 									temp.savedBounds[k].second = 5;
+								}
+							}
+
+							temp.savedInitialGuess[4] = 3.5;
+							temp.savedInitialGuess[5] = 8e4;
+
+							CalculatingData cData = temp.getCalculatingData();
+							cData.parameters = temp.savedInitialGuess;
+							m_numerics->CalculateData(cData);
+							std::span<double> I = std::span<double>{ temp.I.data() + temp.dataRange.first , temp.fittedI.size() };
+							for (const auto& [src, dst] : std::views::zip(temp.fittedI, I))
+								dst = src;
+
+
+
+
+							std::transform(I.begin(), I.end(), I.begin(), [&](double x) {
+								double factor = 5.0;
+								generateNoise(x, factor);
+								return x;
+								});
+
+
+
+							temp.savedInitialGuess = eParams;
+							temp.savedInitialGuess[4] = 1.0;
+							temp.savedInitialGuess[5] = eParams[3];
+							temp.savedUseInitial = true;
+							//fit
+							temp.savedUseBounds = true;
+							for (const auto& [k, v] : eParams)
+							{
+								if (k != 0 && k != 4 && k != 5)
+								{
+									temp.savedBounds[k].first = 1.0 * std::pow(10.0, std::floor(std::log10(v)) - 1);
+									temp.savedBounds[k].second = 9.0 * std::pow(10.0, std::floor(std::log10(v)) + 1);
+								}
+								else if (k == 4) {
+									temp.savedBounds[k].first = 1;
+									temp.savedBounds[k].second = 3;
+								}
+								else if (k == 5) {
+									temp.savedBounds[k].first = 100;
+									temp.savedBounds[k].second = 1e7;
 								}
 								else
 								{
@@ -345,25 +527,54 @@ namespace JFMApp {
 							}
 
 
-							m_numerics->Fit(temp.getFittingInput(), [&](ParameterMap&& output) {
+							/*temp.fixedParameterIDs[4] = true;
+							temp.savedFixedParameterIDs[4] = true;
+							temp.fixedParameterIDs[5] = true;
+							temp.savedFixedParameterIDs[5] = true;
+							temp.savedFixedParametersValues[4] = 0.0;
+							temp.savedFixedParametersValues[5] = 1e10;*/
+							auto tData = generateTest(*m_numerics, 1.0, 5e-10, 5e-3, *c.data);
+							size_t nn = 0;
+							for (auto& t : tData) {
+								if (nn == 149) break;
+								m_numerics->Fit(t.getFittingInput(), [&](ParameterMap&& output) {
 
 
-								CalculatingData cData = temp.getCalculatingData();
-								cData.parameters = output;
+									CalculatingData cData = t.getCalculatingData();
+									cData.parameters = output;
+									cData.modelID = 5;
+									m_numerics->CalculateData(cData);
 
-								m_numerics->CalculateData(cData);
+									double fitError = m_numerics->CalculateError(cData.characteristic.currentData, t.getEstimateInput().characteristic.currentData);
+									std::cout << "Fitting=========================================" << std::endl;
+									std::cout << "Error: " << fitError << std::endl;
+									std::cout << "Initial guess: " << std::endl;
+									for (const auto& [k, v] : t.tunedParameters) {
+										std::cout << m_state.nConfig.parameters[k] << ": " << v << std::endl;
+									}
+									std::cout << "Parameters: " << std::endl;
+									for (const auto& [k, v] : output) {
+										std::cout << m_state.nConfig.parameters[k] << ": " << v << std::endl;
+									}
+									std::cout << "===============================================" << std::endl;
+									std::cout << "Alpha diff " << output[4] - t.tunedParameters[4] << std::endl;
+									std::cout << "Rsh2 diff " << output[5] - t.tunedParameters[5] << std::endl;
 
-								double fitError = m_numerics->CalculateError(cData.characteristic.currentData, temp.getEstimateInput().characteristic.currentData);
-								temp.submitFitting(output, fitError);
-								//std::scoped_lock lk{ m_charMutex };
-								temp.savedUseInitial = false;
-								temp.savedUseBounds = false;
+									temp.submitFitting(output, fitError);
+									//std::scoped_lock lk{ m_charMutex };
+									temp.savedUseInitial = false;
+									temp.savedUseBounds = false;
 
-								temp.bounds = temp.savedBounds;
+									temp.bounds = temp.savedBounds;
+									
+									m_state.browserData.m_characteristics.push_back(temp);
+									m_state.browserData.m_characteristics.back().name += std::to_string(nn++);
+									m_state.plotData.active = &m_state.browserData.m_characteristics.back();
+									});
+							}
 
-								m_state.browserData.m_characteristics.push_back(temp);
-								m_state.plotData.active = &m_state.browserData.m_characteristics.back();
-								});
+
+							
 
 						}
 					}

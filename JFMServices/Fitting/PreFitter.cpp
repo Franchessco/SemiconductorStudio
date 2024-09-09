@@ -670,7 +670,7 @@ namespace JFMService
 		parameterResult[Fitters::ParameterID::A] = A;
 		parameterResult[Fitters::ParameterID::I0] = I0;
 
-		parameterResult[Fitters::ParameterID::alpha] = 2.0;
+		parameterResult[Fitters::ParameterID::alpha] = 2.5;
 		parameterResult[Fitters::ParameterID::Rsh2] = parameterResult[Fitters::ParameterID::Rsh];
 
 		return parameterResult;
