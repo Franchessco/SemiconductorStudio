@@ -5,8 +5,9 @@
 #include "tests.hpp"
 int main()
 {
-	//Tests::test();
-
+#if 0
+	Tests::test();
+#endif
 	JFMApp::AppRunner runner{};
 
 
@@ -17,6 +18,6 @@ int main()
 	runner.addApp(bundle);
 
 	runner.run();
-
+//#endif
 	return 0;
 }
