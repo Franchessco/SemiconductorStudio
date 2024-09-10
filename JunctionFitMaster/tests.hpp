@@ -7,6 +7,7 @@
 #include <Models/JFMModels.hpp>
 #include "../JFMServices/pch.hpp"
 #include <../JFMServices/Fitting/PreFitter.hpp>
+#include <../JFMServices/Fitting/JFMFitting.hpp>
 namespace Tests
 {
     using namespace JFMService;
@@ -31,6 +32,8 @@ namespace Tests
     
     //! testing auto range
     void testAutoRange();
-    
+
+    //! test Producing Plots
+    void testPlots();
 
 };

@@ -4,11 +4,12 @@
 // #include "DataManager.hpp"
 void Tests::test()
 {
-    testDataManager();
-    // testModel();
-    // testYAML();
-    // testFitting();
-    testAutoRange();
+    // testDataManager();
+    //  testModel();
+    //  testYAML();
+    //  testFitting();
+    // testAutoRange();
+    testPlots();
 }
 
 void Tests::testDataManager()
@@ -288,4 +289,33 @@ void Tests::testAutoRange()
     data.currentData = I;
     std::pair<double, double> range = prefitter.rangeData(data);
     std::cout << "lower range: " << range.first << " upper range: " << range.second;
+}
+void Tests::testPlots()
+{
+    double AStart{1.0}, I0Start{1e-8}, Rs{5e-5}, Rsh{5e5};
+    double AEnd{2}, I0End{9e-8};
+    size_t numberOfSteps{500};
+    double AStep{(AEnd - AStart) / numberOfSteps}, I0Step{(I0End - I0Start) / numberOfSteps};
+    ParameterMap tmpMap;
+    std::vector<MCResult> results;
+    tmpMap[Fitters::Rs] = Rs;
+    tmpMap[Fitters::Rsh] = Rsh;
+    for (size_t i = 0; i < numberOfSteps; i++)
+    {
+        MCResult tmpResult;
+        tmpMap[Fitters::A] = AStart + i * AStep;
+        tmpMap[Fitters::I0] = I0Start + i * I0Step;
+        tmpResult.foundParameters = tmpMap;
+        tmpResult.error = i / 100.0;
+        results.push_back(tmpResult);
+    }
+    FittingService::Fitting interfaceObject;
+    FittingService::MCSave toSave;
+    toSave.degreesOfFreedom = 4;
+    toSave.x_label = Fitters::A;
+    toSave.y_label = Fitters::I0;
+    toSave.results = results;
+    toSave.title = "Example Title";
+    toSave.pathToSave = "D:/STUDIA/Semiconductor-Studio/SemiconductorStudio/bin/testsToSave.txt";
+    interfaceObject.SaveMCPlot(toSave);
 };

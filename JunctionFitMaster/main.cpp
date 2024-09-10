@@ -5,9 +5,10 @@
 #include "tests.hpp"
 int main()
 {
-#if 0
+#if 1
 	Tests::test();
 #endif
+#if 0
 	JFMApp::AppRunner runner{};
 
 
@@ -18,6 +19,7 @@ int main()
 	runner.addApp(bundle);
 
 	runner.run();
-//#endif
+#endif
+	std::cin.get();
 	return 0;
 }

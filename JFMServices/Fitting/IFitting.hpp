@@ -101,5 +101,6 @@ namespace JFMService::FittingService
         virtual void Fit(const FittingInput &input, std::function<void(ParameterMap &&)> callback) = 0;
 
         virtual void Simulate(const MCInput &input, std::function<void(MCOutput &&)> callback) = 0;
+        
     };
 }
