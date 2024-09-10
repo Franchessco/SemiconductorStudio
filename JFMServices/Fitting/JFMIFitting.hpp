@@ -87,6 +87,16 @@ namespace JFMService::FittingService
 		MCInput inputData{};
 		std::vector<MCResult> mcResult{};
 	};
+	struct MCSave
+	{
+		std::vector<MCResult> results;
+		std::string title;
+		std::filesystem::path pathToSave;
+		ParameterID x_label;
+		ParameterID y_label;
+		int degreesOfFreedom;
+
+	};
 
 	class IFitting
 	{
@@ -101,5 +111,6 @@ namespace JFMService::FittingService
 
 		virtual void Simulate(const MCInput &input, std::function<void(MCOutput &&)> callback) = 0;
 		virtual double GetUncertainty(const MCOutput &output, int level, ParameterID id) = 0;
+		virtual void SaveMCPlot(const MCSave &toSave) = 0;
 	};
 }

@@ -1,6 +1,7 @@
 #include "JFMFitting.hpp"
 #include "CalculateData.hpp"
 #include "IDataManager.hpp"
+#include <cstdio>
 namespace JFMService::FittingService
 {
 #define ID_TO_NAME(ID) return #ID
@@ -13,7 +14,7 @@ namespace JFMService::FittingService
 	{
 		return m_numericsConfig;
 	}
-	
+
 	void Fitting::CalculateData(CalculatingData &input)
 	{
 		m_dataCalculator.CalculateData(input);
@@ -93,13 +94,13 @@ namespace JFMService::FittingService
 				bounds[id] = std::make_pair(min, max);
 			return bounds;
 		};
-		auto createModel = [&]() 
-			{
-				FittingService::Models models;
-				models[Model4P] = "Four Parameter";
-				models[Model6P] = "Six Parameter";
-				return models;
-			};
+		auto createModel = [&]()
+		{
+			FittingService::Models models;
+			models[Model4P] = "Four Parameter";
+			models[Model6P] = "Six Parameter";
+			return models;
+		};
 		config.models = createModel();
 		config.modelParameters = createModelMap();
 		config.parameters = createParameterMap();
@@ -114,8 +115,71 @@ namespace JFMService::FittingService
 	{
 		m_monteCarlo.Simulate(input, callback);
 	}
-	double Fitting::GetUncertainty(const MCOutput &output,  int level, ParameterID id)
+	double Fitting::GetUncertainty(const MCOutput &output, int level, ParameterID id)
 	{
 		return m_monteCarlo.GetUncertainty(output, level, id);
+	}
+	void Fitting::SaveMCPlot(const MCSave &toSave)
+	{
+		const std::filesystem::path path = toSave.pathToSave;
+
+		std::vector<double> xSave, ySave, errors;
+		ParameterID xID{toSave.x_label}, yID{toSave.y_label};
+		for (const auto &item : toSave.results)
+		{
+			xSave.push_back(item.foundParameters.at(xID));
+			ySave.push_back(item.foundParameters.at(yID));
+			errors.push_back(item.error);
+		}
+		std::string dataToSave;
+		dataToSave += std::to_string(toSave.degreesOfFreedom) + "\n";
+		dataToSave += toSave.title + "\n";
+		using namespace DataManagementService;
+
+		dataToSave += std::string(parameterIdToString((Fitters::ParameterID)toSave.x_label)) + "\n";
+		dataToSave += std::string(parameterIdToString((Fitters::ParameterID)toSave.y_label)) + "\n";
+		auto formatData = [](double x, double y, double e)
+		{
+			auto ToScientific = [](double value)
+			{
+				std::ostringstream out;
+				out << std::scientific << std::setprecision(6) << value;
+				return out.str();
+			};
+			std::string toReturn;
+			toReturn += ToScientific(x) + ", ";
+			toReturn += ToScientific(y) + ", ";
+			toReturn += ToScientific(e) + "\n";
+			return toReturn;
+		};
+
+		for (const auto &[x, y, e] : std::views::zip(xSave, ySave, errors))
+			dataToSave += formatData(x, y, e);
+
+		std::ofstream file(path);
+		file << dataToSave;
+		file.close();
+		std::string command = "python ./generate_image.py " + path.string();
+		std::system(command.c_str());
+		std::cout << path.string();
+		try {
+			// Attempt to remove the file
+			if (std::filesystem::remove(path)) {
+				std::cout << "File deleted successfully.\n";
+			}
+			else {
+				std::cout << "File not found.\n";
+			}
+		}
+		catch (const std::filesystem::filesystem_error& e) {
+			// Catch the exception and print detailed error info
+			std::cerr << "Filesystem error: " << e.what() << '\n';
+			std::cerr << "Path: " << e.path1() << '\n';
+
+			// Optionally, if the exception involves two paths (e.g., copy operations)
+			if (!e.path2().empty()) {
+				std::cerr << "Other path: " << e.path2() << '\n';
+			}
+		}
 	}
 }
