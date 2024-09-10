@@ -27,66 +27,8 @@ namespace JFMApp {
 		ImGui::CreateContext();
 		ImGuiIO& io = ImGui::GetIO();
 
-		//Data::NumericsConfig nConfig{};
-
-		//nConfig.models = std::unordered_map<ModelID, ModelName>{ {0, "6P IV"}, {1, "4P IV"} };
-		//nConfig.parameters = std::unordered_map<ParameterID, ParameterName>{ {0, "I0"}, {1, "A"}, {2, "Rs"}, {3, "Rsh"}, {4, "Alpha"}, {5, "Rsh2"} };
-		//nConfig.modelParameters = std::unordered_map<ModelID, std::vector<ParameterID>>{ {0, {0, 1, 2, 3, 4, 5}}, {1, {0, 1, 2, 3}} };
-		//nConfig.paramBounds = std::unordered_map<ParameterID, Bounds>{ {0, {0.0, 1.0}}, {1, {0.0, 1.0}}, {2, {0.0, 1.0}}, {3, {0.0, 1.0}}, {4, {0.0, 1.0}}, {5, {0.0, 1.0}} };
-
-		//m_state.nConfig = nConfig;
-
-		Data::Characteristic ch{};
-		ch.name = "Test";
-		ch.T = 300;
-		ch.modelID = 0;
-		ch.savedModelID = 0;
-		auto rg = std::ranges::views::iota(1) | std::ranges::views::transform([](double x) {return x * 0.1; }) | std::ranges::views::take(100);
-		ch.V = std::ranges::to<std::vector<double>>(rg);
-		ch.I = std::ranges::to<std::vector<double>>(rg | std::ranges::views::transform([](double x) {return std::exp(x); }));
-
-		ch.fittedParameters = { {0, 0.1}, {1, 0.1}, {2, 0.1}, {3, 0.1}, {4, 0.1}, {5, 0.1} };
-		ch.tunedParameters = ch.fittedParameters;
-		ch.fixedParametersValues = ch.fittedParameters;
-		ch.savedFixedParametersValues = ch.fittedParameters;
-		ch.savedFixedParameterIDs = { {0, false}, {1, false}, {2, false}, {3, false}, {4, false}, {5, false} };
-		ch.fixedParameterIDs = ch.savedFixedParameterIDs;
-		ch.initialGuess = ch.fittedParameters;
-		ch.savedInitialGuess = ch.fittedParameters;
-		ch.bounds = m_state.nConfig.paramBounds;
-		ch.savedBounds = m_state.nConfig.paramBounds;
-
-		m_state.plotData.globalModelID = 0;
-		m_state.plotData.savedGlobalModelID = 0;
-		m_state.plotData.savedGlobalFixedParameterIDs = { {0, false}, {1, false}, {2, false}, {3, false}, {4, false}, {5, false} };
-		m_state.plotData.globalFixedParameterIDs = m_state.plotData.savedGlobalFixedParameterIDs;
-
-		m_state.browserData.m_characteristics.push_back(ch);
-
-		Data::Characteristic::MCSimulation mcSim{};
-
-		for (int i = 0; i < 30; i++) {
-			Data::Characteristic::MCData data{};
-
-			data.parameters[0] = i;
-
-			data.parameters[1] = i;
-			data.parameters[2] = i;
-			data.parameters[3] = i;
-			data.parameters[4] = i;
-			data.parameters[5] = i;
-			data.error = i;
-
-			mcSim.data.push_back(data);
-		}
-
-		mcSim.fixConfig = { {0, 0.1}, {2, 1.0}, {4, 0.1} };
-
-		mcSim.parent = &m_state.browserData.m_characteristics[0];
-		m_state.browserData.m_characteristics[0].mcData.push_back(mcSim);
 
 		m_state.plotData.mcTabs.push_back(1);
-
 
 
 		// Disable the .ini file by setting IniFilename to nullptr
@@ -714,6 +656,8 @@ namespace JFMApp {
 
 				};
 
+
+
 			m_state.browserData.m_loadAllCallback = [&]() {
 
 				std::vector<std::filesystem::path> paths{};
@@ -990,6 +934,64 @@ namespace JFMApp {
 
 				};
 
+			m_state.plotData.m_saveMCPlot = [&](size_t index) {
+				MCSave toSave{};
+				auto& saved = m_state.plotData.mcPlots[index];
+				toSave.x_label = saved.parameters.first;
+				toSave.y_label = saved.parameters.second;
+				toSave.title = saved.name;
+				toSave.degreesOfFreedom = m_state.nConfig.modelParameters[saved.mc.modelID].size() - saved.mc.fixConfig.size();
+				toSave.pathToSave = saved.mc.relPath / saved.name;
+
+				for (auto& res : saved.mc.data)
+					toSave.results.push_back({ res.parameters, res.error });
+
+				m_numerics->SaveMCPlot(toSave);
+				};
+
+			struct USave {
+				ParameterMap paramPair{};
+				std::vector<ParamBounds> uncertainty{};
+				double T{};
+				std::string name{};
+			};
+
+			m_state.plotData.m_saveMCUncertainty = [&]() {
+				std::vector<USave> toSave{};
+				for (auto& c : m_state.browserData.m_characteristics) {
+					if (!c.checked) continue;
+					for (auto& mc : c.mcData) {
+						USave u{};
+						u.paramPair[m_state.plotData.mcTempParams.first] = c.fittedParameters[m_state.plotData.mcTempParams.first];
+						u.paramPair[m_state.plotData.mcTempParams.second] = c.fittedParameters[m_state.plotData.mcTempParams.second];
+						u.T = c.T;
+						u.name = c.name;
+						MCOutput out{};
+						MCInput in{};
+						in.trueParameters = mc.trueParameters;
+						in.startingData.fixConfig = mc.fixConfig;
+						out.inputData = in;
+
+						out.mcResult.clear();
+						for (auto& res : mc.data)
+							out.mcResult.push_back({ res.parameters, res.error });
+
+						u.uncertainty.resize(3);
+						for (size_t i = 0; i < 3; i++) {
+							for (auto& [k, v] : mc.trueParameters) {
+								auto unc = m_numerics->GetUncertainty(out, i, k);
+								u.uncertainty[i][k] = unc;
+							}
+						}
+						toSave.push_back(u);
+
+					}
+				}
+
+
+				//save the uncertainties
+
+				};
 		}
 	}
 };

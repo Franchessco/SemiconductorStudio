@@ -48,7 +48,7 @@ namespace JFMApp::Views {
 
 		std::string& prX = nConf.parameters[mc.parameters.first];
 
-		const auto& params = nConf.modelParameters[mc.mc.parent->modelID];
+		const auto& params = nConf.modelParameters[mc.mc.modelID];
 		ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.15f);
 		if (ImGui::BeginCombo("X", prX.c_str())) {
 
@@ -151,7 +151,7 @@ namespace JFMApp::Views {
 							std::string& prX = nConf.parameters[tempParams.first];
 
 
-							auto& params = nConf.modelParameters[mc.parent->modelID];
+							auto& params = nConf.modelParameters[mc.modelID];
 
 							if (ImGui::BeginCombo("X", prX.c_str())) {
 
@@ -201,7 +201,13 @@ namespace JFMApp::Views {
 							mcData.mc = *data.activeMC;
 							mcData.tab = tab;
 
+							
+
 							data.mcPlots.push_back(mcData);
+							data.mcPlots.back().save = [&data]() {
+								data.m_saveMCPlot(data.mcPlots.size() - 1);
+								};
+
 						}
 						ImGui::SameLine();
 						if (ImGui::Button("Save Uncertainty")) {

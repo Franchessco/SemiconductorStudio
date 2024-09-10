@@ -101,7 +101,9 @@ namespace JFMApp::Data {
 			ParameterMap fixConfig{};
 			size_t iterations{ 0 };
 			double sigma{ 1.0 };
-			Characteristic* parent{ nullptr };
+			ModelID modelID{};
+			ParameterMap trueParameters{};
+			std::filesystem::path relPath{};
 		};
 
 		std::vector<MCSimulation> mcData{};

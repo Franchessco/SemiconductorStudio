@@ -45,7 +45,7 @@ namespace JFMApp::Data
 			std::pair<ParameterID, ParameterID> parameters{};
 			std::string name{};
 			int tab{ -1 };
-
+			
 			std::function<void()> save{};
 		};
 
@@ -81,6 +81,7 @@ namespace JFMApp::Data
 		std::function<void()> m_performMCOnAllCallback{};
 
 		std::function<void()> m_saveMCUncertainty{};
+		std::function<void(size_t)> m_saveMCPlot{};
 
 
 		struct PlotSettings {
