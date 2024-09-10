@@ -204,7 +204,7 @@ namespace JFMApp {
 				}
 			}
 			ImPlot::EndPlot();
-			
+
 			ImGui::SliderInt("Char", &curr_c, 0, globalNoisyI.size() - 1);
 		}
 		ImGui::End();
@@ -219,7 +219,7 @@ namespace JFMApp {
 				ImPlot::SetupAxes("LOG(V)", "d(LOG(I))", Data::PlotData::plotSettings.xFlags, Data::PlotData::plotSettings.yFlags);
 
 				//ImPlot::SetupAxisScale(ImAxis_Y1, Data::Characteristic::TFL, Data::Characteristic::TFNL);
-				
+
 				if (globalErrors.size())
 					ImPlot::PlotLine("D", globalErrors[0].first.data(), globalErrors[0].second.data(), globalErrors[0].first.size());
 
@@ -242,6 +242,13 @@ namespace JFMApp {
 			ImGui::End();
 		}
 		//ImGui::ShowDemoWindow();
+
+
+		ImGui::SetNextWindowDockID(mainDockID, ImGuiCond_Once);
+		if (ImGui::Begin("Generate")) {
+			Views::Widgets::DataGenerator(m_state.browserData);
+		}
+		ImGui::End();
 
 	}
 
@@ -272,6 +279,265 @@ namespace JFMApp {
 		//browser callbacks
 
 		{
+			m_state.browserData.m_singleShot = [&]() {
+
+				auto& genData = m_state.browserData.m_paramGenData;
+
+				auto& data = m_state.browserData;
+
+				auto& conf = m_state.nConfig;
+
+				std::vector<double> V{};
+
+				if (data.m_byStepN) {
+					V.resize(data.m_nSteps);
+					double v = data.m_voltageGenRange[0];
+					double step = (data.m_voltageGenRange[1] - data.m_voltageGenRange[0]) / (data.m_nSteps - 1);
+					for (auto& val : V) {
+						val = v;
+						v += step;
+					}
+				}
+				else {
+					double step = data.m_voltageGenStep;
+					double val = data.m_voltageGenRange[0];
+					while (val <= data.m_voltageGenRange[1]) {
+						V.push_back(val);
+						val += step;
+					}
+				}
+
+				if (V.size() == 0) return;
+
+				Data::Characteristic ch{};
+				ch.V = V;
+				ch.I.resize(V.size());
+				ch.name = "Generated";
+				ch.T = data.m_genT;
+				ch.modelID = data.m_genModelID;
+				ch.savedModelID = data.m_genModelID;
+				ch.dataRange = { 0, ch.V.size() - 1 };
+				ch.m_tuneCallback = [&]() {
+					ch.fittedParameters = ch.tunedParameters;
+					CalculatingData cData = ch.getCalculatingData();
+
+					m_numerics->CalculateData(cData);
+
+					ch.fitError = m_numerics->CalculateError(cData.characteristic.currentData, ch.getEstimateInput().characteristic.currentData);
+					};
+
+				for (auto& [id, d] : genData)
+					ch.fittedParameters[id] = d.singleValue;
+
+				ch.I.resize(V.size());
+				auto cData = ch.getCalculatingData();
+				m_numerics->CalculateData(cData);
+				ch.I = ch.fittedI;
+				ch.checked = true;
+				m_state.browserData.m_characteristics.push_back(ch);
+				m_state.plotData.active = &m_state.browserData.m_characteristics.back();
+				};
+
+
+
+
+
+			m_state.browserData.m_generateCallback = [&]() {
+
+				auto& genData = m_state.browserData.m_paramGenData;
+
+				auto& data = m_state.browserData;
+
+				auto& conf = m_state.nConfig;
+
+				std::vector<double> V{};
+
+				if (data.m_byStepN) {
+					V.resize(data.m_nSteps);
+					double v = data.m_voltageGenRange[0];
+					double step = (data.m_voltageGenRange[1] - data.m_voltageGenRange[0]) / (data.m_nSteps - 1);
+					for (auto& val : V) {
+						val = v;
+						v += step;
+					}
+				}
+				else {
+					double step = data.m_voltageGenStep;
+					double val = data.m_voltageGenRange[0];
+					while (val <= data.m_voltageGenRange[1]) {
+						V.push_back(val);
+						val += step;
+					}
+				}
+
+				std::vector<double> T{};
+
+				if (data.m_tempN == 1)
+					T.push_back(data.m_genT);
+				else {
+					T.resize(data.m_tempN);
+					double v = data.m_tempRange[0];
+					double step = (data.m_tempRange[1] - data.m_tempRange[0]) / (data.m_tempN - 1);
+					for (auto& val : T) {
+						val = v;
+						v += step;
+					}
+				}
+
+
+				if (V.size() == 0) return;
+
+				std::unordered_map<ParameterID, std::vector<double>> params{};
+
+
+				auto generateRange = [&](double start, double end, bool byNumber, size_t N, double step, Data::BrowserData::GenType type) {
+					std::vector<double> vals{};
+					if (byNumber) {
+						vals.resize(N);
+						double v = start;
+						double step = (end - start) / (N - 1);
+						double d_step = 10.0 / N;
+
+						unsigned int start_pow = std::floor(std::log10(start));
+						unsigned int end_pow = std::floor(std::log10(end));
+
+						double log_step = (end_pow - start_pow) / (N - 1);
+
+						switch (type) {
+						case Data::BrowserData::GenType::Linear:
+							for (auto& val : vals) {
+								val = v;
+								v += step;
+							}
+							break;
+						case Data::BrowserData::GenType::Log:
+							for (int i = 0; i < N; ++i) {
+								double log_value = start_pow + i * log_step;
+								vals.push_back(std::pow(10, log_value));
+							}
+							break;
+						case Data::BrowserData::GenType::Exponential:
+							for (int i = 0; i < N; ++i) {
+								double exponent_value = start + i * step;
+								vals.push_back(std::exp(exponent_value));
+							}
+							break;
+						case Data::BrowserData::GenType::PerDecade:
+							for (unsigned int i = start_pow; i <= end_pow; i++)
+							{
+								for (double j = 1.0; j < 10.0; j += d_step)
+									vals.push_back(j * std::pow(10, i));
+							}
+							break;
+
+						}
+
+					}
+					else {
+						double v = start;
+						while (v <= end) {
+							vals.push_back(v);
+							v += step;
+						}
+					}
+					return vals;
+
+					};
+
+
+
+				for (auto& [id, d] : genData) {
+					if (d.singleShot)
+						params[id] = generateRange(d.start, d.end, data.m_byStepN, d.nSteps, d.step, d.type);
+					else
+						params[id] = { d.singleValue };
+				}
+
+				std::vector<std::pair<ParameterMap, double>> pMaps{};
+
+				size_t numOfCombinations = std::accumulate(params.begin(), params.end(), 1, [](size_t acc, const auto& p) { return acc * p.second.size(); });
+
+				numOfCombinations *= T.size();
+
+				std::unordered_map<ParameterID, size_t> indices{};
+
+				
+
+				for (const auto& [id, vals] : params) {
+					indices[id] = 0;
+				}
+
+				indices[(*(--indices.end())).first + 1] = 0;
+
+				ParameterID tempID = (*(--indices.end())).first;
+
+				pMaps.resize(numOfCombinations);
+
+
+				for (size_t i = 0; i < numOfCombinations; i++) {
+					std::pair<ParameterMap, double> pMap{};
+					for (auto& [id, s] : indices)
+						pMap.first[id == tempID ? id - 1 : id] = 0.0;
+
+					for (auto& [id, val] : pMap.first)
+						val = params[id][indices[id]];
+
+					pMap.second = T[indices[tempID]];
+
+					for (auto& [p, i] : indices) {
+						i++;
+						if (p != tempID && i >= params[p].size())
+							i = 0;
+						else if (p == tempID && i >= T.size())
+							i = 0;
+						else
+							break;
+					}
+
+
+					pMaps[i] = pMap;
+				}
+
+
+			
+				for (auto& pMap : pMaps) {
+					Data::Characteristic ch{};
+					ch.V = V;
+					ch.I.resize(V.size());
+					ch.name = "Generated";
+					ch.T = pMap.second;
+					ch.modelID = data.m_genModelID;
+					ch.savedModelID = data.m_genModelID;
+					ch.dataRange = { 0, ch.V.size() - 1 };
+					ch.m_tuneCallback = [&]() {
+						ch.fittedParameters = ch.tunedParameters;
+						CalculatingData cData = ch.getCalculatingData();
+
+						m_numerics->CalculateData(cData);
+
+						ch.fitError = m_numerics->CalculateError(cData.characteristic.currentData, ch.getEstimateInput().characteristic.currentData);
+						};
+
+					ch.fittedParameters = pMap.first;
+
+					auto cData = ch.getCalculatingData();
+					m_numerics->CalculateData(cData);
+					ch.I = ch.fittedI;
+					ch.checked = true;
+					m_state.browserData.m_characteristics.push_back(ch);
+					m_state.plotData.active = &m_state.browserData.m_characteristics.back();
+				}
+
+
+				};
+
+
+
+
+
+
+
+
 			m_state.browserData.m_loadCallback = [&]() {
 
 				std::vector<std::filesystem::path> paths{};

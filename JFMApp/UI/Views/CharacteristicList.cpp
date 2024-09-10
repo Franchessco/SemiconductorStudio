@@ -93,11 +93,9 @@ namespace JFMApp::Views {
 
 					ImGui::TableNextColumn();
 					ImGui::PushID(id++);
-					ImGui::ColorEdit4("", &ch.color.x, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
-					ImGui::PopID();
-
-
+					ImGui::ColorEdit4("##color", &ch.color.x, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
 					
+
 
 					ImGui::TableNextColumn();
 					ImGui::Checkbox(ch.name.c_str(), &ch.checked);
@@ -122,7 +120,7 @@ namespace JFMApp::Views {
 							ImGui::Text(value.c_str());
 						}
 
-
+					ImGui::PopID();
 				}
 
 				ImGui::EndTable();

@@ -211,16 +211,18 @@ namespace JFMApp::Views {
 				ImGui::TableNextColumn();
 				//draw the characteristic list
 				{
+					int i = 0;
 					ImVec2 listSize = ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y);
 					if (ImGui::BeginListBox("##List", listSize)) {
 						if (data.characteristics) {
 
 							for (auto& ch : *(data.characteristics)) {
 								if (!ch.checked) continue;
+								ImGui::PushID(i++);
 								if (ImGui::Selectable(ch.name.c_str(), data.active == &ch)) {
 									data.active = &ch;
 								}
-
+								ImGui::PopID();
 
 
 							}
@@ -422,8 +424,8 @@ namespace JFMApp::Views {
 						ImGui::TableNextRow();
 						for (auto& [id, value] : act.tunedParameters) {
 							float val = value;
-							float min = act.fittedParameters[id] / 1000.0;
-							float max = act.fittedParameters[id] * 1000.0;
+							float min = act.fittedParameters[id] / 100.0;
+							float max = act.fittedParameters[id] * 100.0;
 
 							ImGui::TableNextColumn();
 							std::string cname = "##" + data.paramConfig->parameters[id];
@@ -431,7 +433,7 @@ namespace JFMApp::Views {
 								if (act.tempParametersActive[id]) data.m_tuneCallback();
 
 							ImGui::SameLine();
-							ImGuiSliderFlags flags = ImGuiSliderFlags_Logarithmic;
+							ImGuiSliderFlags flags = ImGuiSliderFlags_Logarithmic & ImGuiSliderFlags_None;
 
 							//and data.paramConfig->parameters[id] != std::string{ "A" }
 							//if (data.paramConfig->parameters[id] == std::string{ "I0" } )

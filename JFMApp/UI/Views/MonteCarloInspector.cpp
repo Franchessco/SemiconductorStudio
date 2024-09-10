@@ -4,7 +4,7 @@
 
 namespace JFMApp::Views {
 
-	static std::vector<std::array<double, 3>> chi2vec = {
+	std::vector<std::array<double, 3>> chi2vec = {
 		{1.0, 4.0, 9.0},
 		{2.30, 6.18, 11.8},
 		{3.53, 8.02, 14.2},
@@ -202,6 +202,10 @@ namespace JFMApp::Views {
 							mcData.tab = tab;
 
 							data.mcPlots.push_back(mcData);
+						}
+						ImGui::SameLine();
+						if (ImGui::Button("Save Uncertainty")) {
+							data.m_saveMCUncertainty();
 						}
 
 						if (!cond)

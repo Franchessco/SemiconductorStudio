@@ -18,7 +18,7 @@ namespace JFMApp::Views {
 
 		static void FileSelector(Data::BrowserData& data);
 		static void ViewMenu(Data::UIState& data);
-		static void GenerateData();
+		static void DataGenerator(Data::BrowserData& data);
 
 		static void global_ds();
 

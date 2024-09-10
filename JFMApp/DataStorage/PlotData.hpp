@@ -80,6 +80,8 @@ namespace JFMApp::Data
 		std::function<void()> m_performMCCallback{};
 		std::function<void()> m_performMCOnAllCallback{};
 
+		std::function<void()> m_saveMCUncertainty{};
+
 
 		struct PlotSettings {
 			ImPlotFlags flags = ImPlotFlags_NoLegend;
