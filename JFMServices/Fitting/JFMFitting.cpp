@@ -115,13 +115,13 @@ namespace JFMService::FittingService
 	{
 		m_monteCarlo.Simulate(input, callback);
 	}
-	double Fitting::GetUncertainty(const MCOutput &output, int level, ParameterID id)
+	std::pair<double,double> Fitting::GetUncertainty(const MCOutput &output, int level, ParameterID id)
 	{
 		return m_monteCarlo.GetUncertainty(output, level, id);
 	}
 	void Fitting::SaveMCPlot(const MCSave &toSave)
 	{
-		const std::filesystem::path path = toSave.pathToSave;
+		const std::filesystem::path path = toSave.pathToSave / ".txt";
 
 		std::vector<double> xSave, ySave, errors;
 		ParameterID xID{toSave.x_label}, yID{toSave.y_label};

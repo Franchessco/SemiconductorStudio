@@ -23,7 +23,7 @@ namespace JFMService::FittingService
         virtual void Fit(const FittingInput &input, std::function<void(ParameterMap &&)> callback) override;
 
         virtual void Simulate(const MCInput &input, std::function<void(MCOutput &&)> callback) override;
-        double GetUncertainty(const MCOutput &output,  int level, ParameterID id) override;
+        std::pair<double,double> GetUncertainty(const MCOutput &output,  int level, ParameterID id) override;
         virtual void SaveMCPlot(const MCSave &toSave);
 
     private:
