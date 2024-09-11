@@ -955,8 +955,9 @@ namespace JFMApp {
 
 					}
 				}
-
-
+				auto& ch = m_state.browserData.m_characteristics[0];
+				std::string name = ch.name + ".csv";
+				m_numerics->SaveUncertanties(toSave, ch.path.parent_path() / name);
 				//save the uncertainties
 
 				};
