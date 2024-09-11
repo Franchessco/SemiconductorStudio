@@ -2,7 +2,7 @@
 #include "JFMFitter.hpp"
 #include "CalculateData.hpp"
 
-extern  std::vector<std::pair<std::vector<double>, std::vector<double>>> globalErrors;
+
 
 
 namespace JFMService
@@ -305,10 +305,10 @@ namespace JFMService
 			filteredI.push_back(std::log(i - v / parameterResult[Fitters::ParameterID::Rsh]));
 		}*/
 
-		globalErrors.resize(2);
-		derivateFull(logV, loglogI, globalErrors[0]);
-		globalErrors[1].first = logV;
-		globalErrors[1].second = loglogI;
+		
+		//derivateFull(logV, loglogI, globalErrors[0]);
+		//globalErrors[1].first = logV;
+		//globalErrors[1].second = loglogI;
 		/*for (const auto& [i, v] : std::views::zip(loglogI, logV))
 			globalErrors[1].second.push_back((i - std::log(parameterResult[Fitters::ParameterID::Rsh])) / v);*/
 
@@ -618,10 +618,10 @@ namespace JFMService
 			filteredI.push_back(std::log(i - v / parameterResult[Fitters::ParameterID::Rsh]));
 		}*/
 
-		globalErrors.resize(2);
-		derivateFull(logV, loglogI, globalErrors[0]);
-		globalErrors[1].first = logV;
-		globalErrors[1].second = loglogI;
+		//globalErrors.resize(2);
+		//derivateFull(logV, loglogI, globalErrors[0]);
+		//globalErrors[1].first = logV;
+		//globalErrors[1].second = loglogI;
 		/*for (const auto& [i, v] : std::views::zip(loglogI, logV))
 			globalErrors[1].second.push_back((i - std::log(parameterResult[Fitters::ParameterID::Rsh])) / v);*/
 
