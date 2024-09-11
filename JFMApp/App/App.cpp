@@ -52,6 +52,9 @@ namespace JFMApp {
 		//init the selection vector for the file browser
 		m_state.browserData.m_selection.resize(std::distance(std::filesystem::directory_iterator(m_state.browserData.rootPath), std::filesystem::directory_iterator{}));
 
+
+		m_state.plotData.globalModelID = 3;
+		m_state.plotData.savedGlobalModelID = 3;
 	}
 
 	void App::draw() {
@@ -897,11 +900,13 @@ namespace JFMApp {
 
 				for (auto& ch : m_state.browserData.m_characteristics) {
 					if (!ch.checked) continue;
-
+					ch.savedUseBounds = true;
 					auto mcData = ch.getMCConfig();
+					mcData.iterations = m_state.plotData.savedGlobalMCConfig.n;
+					mcData.noise = m_state.plotData.savedGlobalMCConfig.sigma;
+					
 
 					m_numerics->Simulate(mcData, [&](MCOutput&& output) {
-						std::scoped_lock lk{ *ch.mcMutex };
 						ch.submitMC(output);
 						});
 				}
