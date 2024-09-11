@@ -121,7 +121,8 @@ namespace JFMService::FittingService
 	}
 	void Fitting::SaveMCPlot(const MCSave &toSave)
 	{
-		const std::filesystem::path path = toSave.pathToSave / ".txt";
+		std::string fname = toSave.pathToSave.filename().string() + ".txt";
+		const std::filesystem::path path = toSave.pathToSave.parent_path() / fname;
 
 		std::vector<double> xSave, ySave, errors;
 		ParameterID xID{toSave.x_label}, yID{toSave.y_label};
