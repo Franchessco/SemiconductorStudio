@@ -201,6 +201,7 @@ namespace JFMService::FittingService
 			};
 			std::string string;
 			string += save.name + ", ";
+			string += std::to_string(save.T) + ", ";
 			for (const auto &[key, val] : save.paramPair)
 				string += ToScientific(val) + ", ";
 
