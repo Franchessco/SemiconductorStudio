@@ -5,10 +5,10 @@
 #include "tests.hpp"
 int main()
 {
-#if 1
+#if 0
 	Tests::test();
 #endif
-#if 0
+#if 1
 	JFMApp::AppRunner runner{};
 
 
@@ -20,6 +20,6 @@ int main()
 
 	runner.run();
 #endif
-	std::cin.get();
+	//std::cin.get();
 	return 0;
 }

@@ -281,9 +281,6 @@ namespace JFMApp {
 				};
 
 
-
-
-
 			m_state.browserData.m_generateCallback = [&]() {
 
 				auto& genData = m_state.browserData.m_paramGenData;
@@ -472,12 +469,6 @@ namespace JFMApp {
 
 
 				};
-
-
-
-
-
-
 
 
 			m_state.browserData.m_loadCallback = [&]() {
@@ -906,28 +897,11 @@ namespace JFMApp {
 
 				for (auto& ch : m_state.browserData.m_characteristics) {
 					if (!ch.checked) continue;
-					auto fInput = ch.getFittingInput();
 
-					fInput.initialData.modelID = m_state.plotData.savedGlobalModelID;
-					fInput.name = ch.name;
+					auto mcData = ch.getMCConfig();
 
-					ParameterMap fv{};
-					for (auto& [id, val] : m_state.plotData.savedGlobalFixedParameterIDs) {
-						if (val) fv[id] = ch.fittedParameters[id];
-					}
-					fInput.fixConfig = fv;
-
-					fInput.useBounds = false;
-
-					MCInput mcI{};
-					mcI.startingData = fInput;
-					mcI.relPath = "./MC";
-					mcI.trueParameters = ch.fittedParameters;
-					mcI.iterations = m_state.plotData.savedGlobalMCConfig.n;
-					mcI.noise = m_state.plotData.savedGlobalMCConfig.sigma;
-
-					m_numerics->Simulate(mcI, [&](MCOutput&& output) {
-						//std::scoped_lock lk{ *ch.mcMutex };
+					m_numerics->Simulate(mcData, [&](MCOutput&& output) {
+						std::scoped_lock lk{ *ch.mcMutex };
 						ch.submitMC(output);
 						});
 				}
