@@ -923,19 +923,13 @@ namespace JFMApp {
 				m_numerics->SaveMCPlot(toSave);
 				};
 
-			struct USave {
-				ParameterMap paramPair{};
-				std::vector<ParamBounds> uncertainty{};
-				double T{};
-				std::string name{};
-			};
 
 			m_state.plotData.m_saveMCUncertainty = [&]() {
-				std::vector<USave> toSave{};
+				std::vector<UncertaintySave > toSave{};
 				for (auto& c : m_state.browserData.m_characteristics) {
 					if (!c.checked) continue;
 					for (auto& mc : c.mcData) {
-						USave u{};
+						UncertaintySave u{};
 						u.paramPair[m_state.plotData.mcTempParams.first] = c.fittedParameters[m_state.plotData.mcTempParams.first];
 						u.paramPair[m_state.plotData.mcTempParams.second] = c.fittedParameters[m_state.plotData.mcTempParams.second];
 						u.T = c.T;

@@ -2,8 +2,9 @@
 #include "../Models/JFMErrorModel.hpp"
 #include "../Fitting/JFMFitter.hpp"
 #include "../Models/CalculateData.hpp"
+#include <compare>
 
-extern std::vector < std::pair < std::vector<double>, std::vector<double> >> globalNoisyI;
+extern std::vector<std::pair<std::vector<double>, std::vector<double>>> globalNoisyI;
 std::mutex g_mutex;
 static int blockNumber = 0;
 namespace JFMService
@@ -15,7 +16,7 @@ namespace JFMService
 	{
 		blockNumber += 1;
 		int localNumeber = blockNumber;
-		//int blockNumber = startIdx - chunkSize
+		// int blockNumber = startIdx - chunkSize
 		for (int i = 0; i < chunkSize; ++i)
 		{
 			int idx = startIdx + i;
@@ -26,16 +27,16 @@ namespace JFMService
 			}
 			MCResult result;
 			simulate(preFitter, fitter, input, localResults, i);
-			//if(i%20 == 0)
-				std::cout << "block:" << localNumeber << " idx: " << i << std::endl;
+			// if(i%20 == 0)
+			std::cout << "block:" << localNumeber << " idx: " << i << std::endl;
 		}
 	};
-#define MULTI_THREAD  1;
+#define MULTI_THREAD 1;
 	static std::mutex mutex;
 	static int num = 0;
 	void MonteCarloEngine::Simulate(const MCInput& input, std::function<void(MCOutput&&)> callback)
 	{
-		int chunkSize = (input.iterations / 14) + 1; //41
+		int chunkSize = (input.iterations / 14) + 1; // 41
 		std::jthread thread{
 			[=]()
 			{
@@ -47,24 +48,23 @@ namespace JFMService
 				output.mcResult.resize(input.iterations);
 
 				std::vector<std::future<std::vector<MCResult>>> futures;
-				int numChunks = (input.iterations + chunkSize - 1) / chunkSize; //25
+				int numChunks = (input.iterations + chunkSize - 1) / chunkSize; // 25
 
 				std::vector<MCResult> finalResults(input.iterations);
 				for (int chunk = 0; chunk < numChunks; ++chunk)
 				{
 					int startIdx = chunk * chunkSize;
 					futures.push_back(std::async(std::launch::async,
-						[&, startIdx]()
-						{
-
-							std::vector<MCResult> localResults(chunkSize);
-							simulateChunk(startIdx, chunkSize, preFitter, fitter, output.inputData, localResults,chunk);
-							return localResults; // Return local results
-						}
-					));
+												 [&, startIdx]()
+												 {
+													 std::vector<MCResult> localResults(chunkSize);
+													 simulateChunk(startIdx, chunkSize, preFitter, fitter, output.inputData, localResults, chunk);
+													 return localResults; // Return local results
+												 }));
 				}
 
-				for (int chunk = 0; chunk < numChunks; ++chunk) {
+				for (int chunk = 0; chunk < numChunks; ++chunk)
+				{
 					auto localResults = futures[chunk].get(); // Wait for and retrieve local results
 					std::copy(localResults.begin(), localResults.end(), output.mcResult.begin() + (chunk * chunkSize));
 				}
@@ -72,47 +72,44 @@ namespace JFMService
 				auto end = std::chrono::high_resolution_clock().now();
 				auto miliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 				auto perIteration = miliseconds / input.iterations;
-				auto seconds= miliseconds / 1000;
-				std::cout << "time: " << seconds<< " s "
-						  << perIteration<< " ms per fit" << std::endl;
+				auto seconds = miliseconds / 1000;
+				std::cout << "time: " << seconds << " s "
+						  << perIteration << " ms per fit" << std::endl;
 
 				if (callback)
 					callback(std::move(output));
-			}
-		};
+			} };
 
 		thread.detach();
-
 	}
 
 	void MonteCarloEngine::generateNoise(double& value, double factor)
 	{
 		double noise = (value * factor / 100);
 		double copy = value;
-		//std::uniform_real_distribution<double> distribution{ -1,1 };
-		std::normal_distribution<double> distribution{ 0,1 };
-		//std::cout << distribution(m_generator)*sigma << std::endl;
+		// std::uniform_real_distribution<double> distribution{ -1,1 };
+		std::normal_distribution<double> distribution{ 0, 1 };
+		// std::cout << distribution(m_generator)*sigma << std::endl;
 		value += distribution(m_generator) * noise;
-		//value = value +  distribution(m_generator)*(factor / 100) * value ;
-		//value = std::abs(value);
-
+		// value = value +  distribution(m_generator)*(factor / 100) * value ;
+		// value = std::abs(value);
 	}
 	void MonteCarloEngine::simulate(const std::shared_ptr<AbstractPreFit>& preFitter, const std::shared_ptr<Fitters::AbstractFitter> fitter, MCInput& input, std::vector<MCResult>& results, int i)
 	{
 		MCResult result;
 		MCInput copied{ input };
 		auto characteristic = input.startingData.initialData.characteristic;
-		std::vector<double> copiedCurrent{ characteristic.currentData.begin(),characteristic.currentData.end() };
-		std::vector<double> copiedVoltage{ characteristic.voltageData.begin(),characteristic.voltageData.end() };
-		copied.startingData.initialData.characteristic.currentData = { copiedCurrent.begin(),copiedCurrent.end() };
-		auto checkParams = [](const ParameterMap& PMap) {
-			return std::any_of(PMap.begin(), PMap.end(), [](const std::pair<const int, double>& pair) {
-				return pair.second < 0;
-				});
+		std::vector<double> copiedCurrent{ characteristic.currentData.begin(), characteristic.currentData.end() };
+		std::vector<double> copiedVoltage{ characteristic.voltageData.begin(), characteristic.voltageData.end() };
+		copied.startingData.initialData.characteristic.currentData = { copiedCurrent.begin(), copiedCurrent.end() };
+		auto checkParams = [](const ParameterMap& PMap)
+			{
+				return std::any_of(PMap.begin(), PMap.end(), [](const std::pair<const int, double>& pair)
+					{ return pair.second < 0; });
 			};
 		auto outOfBounds = [](const ParameterMap& PMap, const ParamBounds& bounds)
 			{
-				for(const auto& [key,val]:PMap)
+				for (const auto& [key, val] : PMap)
 				{
 					if (val < bounds.at(key).first or val > bounds.at(key).second)
 						return true;
@@ -122,16 +119,17 @@ namespace JFMService
 		auto callback = [&](const ParameterMap&& fittingResult)
 			{ result.foundParameters = fittingResult; };
 		std::vector<double> calculated;
-		do {
-			copiedCurrent = { characteristic.currentData.begin(),characteristic.currentData.end() };
-			copied.startingData.initialData.characteristic.currentData = { copiedCurrent.begin(),copiedCurrent.end() };
+		do
+		{
+			copiedCurrent = { characteristic.currentData.begin(), characteristic.currentData.end() };
+			copied.startingData.initialData.characteristic.currentData = { copiedCurrent.begin(), copiedCurrent.end() };
 			for (auto& I : copiedCurrent)
 				generateNoise(I, copied.noise);
 			copied.startingData.initialValues = preFitter->Estimate(copied.startingData.initialData);
 			fitter->Fit(copied.startingData, callback);
 			calculateFittingError(input, result, calculated);
 
-		} while (result.error > 23.5 or outOfBounds(result.foundParameters,input.startingData.bounds)); // and any of the parameters is negative
+		} while (result.error > 23.5 or outOfBounds(result.foundParameters, input.startingData.bounds)); // and any of the parameters is negative
 		g_mutex.lock();
 
 		globalNoisyI.push_back({ copiedCurrent, calculated });
@@ -152,14 +150,13 @@ namespace JFMService
 
 		Chi2ErrorModel errorModel;
 		auto characteristic = input.startingData.initialData.characteristic;
-		std::vector<double> copiedCurrent{ characteristic.currentData.begin(),characteristic.currentData.end() };
-		std::vector<double> copiedVoltage{ characteristic.voltageData.begin(),characteristic.voltageData.end() };
+		std::vector<double> copiedCurrent{ characteristic.currentData.begin(), characteristic.currentData.end() };
+		std::vector<double> copiedVoltage{ characteristic.voltageData.begin(), characteristic.voltageData.end() };
 
 		data.additionalParameters = input.startingData.initialData.additionalParameters;
 		data.parameters = result.foundParameters;
-		data.characteristic = { {copiedVoltage.begin(),copiedVoltage.end()}, {copiedCurrent.begin(),copiedCurrent.end()} };
+		data.characteristic = { {copiedVoltage.begin(), copiedVoltage.end()}, {copiedCurrent.begin(), copiedCurrent.end()} };
 		data.modelID = input.startingData.initialData.modelID;
-
 
 		std::vector<double> trueCurrentVector{};
 		trueCurrentVector.resize(copiedCurrent.size());
@@ -178,61 +175,61 @@ namespace JFMService
 			accumulatedError += IerrorModel(trueI, fitI, noise);
 
 		result.error = accumulatedError;
-
 	}
-	double MonteCarloEngine::GetUncertainty(const MCOutput& output, int level, ParameterID id)
+
+	std::pair<double, double> MonteCarloEngine::GetUncertainty(const MCOutput& output, int level, ParameterID id)
 	{
-		std::vector<double> values;
-		values.reserve(output.mcResult.size());
+		int degreesOfFreedom = calculateDegreesOfFreedom(output.inputData.trueParameters, output.inputData.startingData.fixConfig);
+		double acceptationLevel = m_uncertaintyMultipliers[degreesOfFreedom - 1][level];//getAcceptationLevel(level, degreesOfFreedom);
 
-		std::ranges::transform(output.mcResult, std::back_inserter(values), [&](const MCResult& result)
-			{ return result.foundParameters.at(id); });
+		std::vector<MCResult> resultsCpy{ output.mcResult };
+		std::vector<MCResult> internalResult;
 
-		if (values.size() < 2)
-		{
-			throw std::invalid_argument("Insufficient data to calculate uncertainty");
-		}
+		auto isAcceptedPoint = [&](const MCResult& res)
+			{
+				return res.error < acceptationLevel;
+			};
+		for (MCResult item : resultsCpy | std::views::filter(isAcceptedPoint))
+			internalResult.push_back(item);
 
-		double max_value = *std::ranges::max_element(values);
-		double min_value = *std::ranges::min_element(values);
-		double difference = max_value - min_value;
+		auto MCResultComparator = [&](const MCResult& lhs, const MCResult& rhs, auto compObjec)
+			{
+				return compObjec(lhs.foundParameters.at(id), rhs.foundParameters.at(id));
+			};
+		auto maxIt = std::max_element(internalResult.begin(), internalResult.end(),
+			[&](const auto& lhs, const auto& rhs) {
+				return lhs.foundParameters.at(id) < rhs.foundParameters.at(id);
+			});
 
-		double multiplier = getUncertaintyMultiplier(
-			calculateNumberOfFindingParameters(output.inputData.trueParameters,
-				output.inputData.startingData.fixConfig),
-			(ConfidenceLevel)level);
+		auto minIt = std::min_element(internalResult.begin(), internalResult.end(),
+			[&](const auto& lhs, const auto& rhs) {
+				return lhs.foundParameters.at(id) < rhs.foundParameters.at(id);
+			});
 
-		return difference * multiplier;
-	}
+		// Extract the max and min values
+		double maxValue = maxIt->foundParameters.at(id);
+		double minValue = minIt->foundParameters.at(id);
+		return { minValue, maxValue };
 
-	int MonteCarloEngine::calculateNumberOfFindingParameters(const ParameterMap& trueParameters, const ParameterMap& fixedValues)
+	};
+
+	int MonteCarloEngine::calculateDegreesOfFreedom(const ParameterMap& trueParameters, const ParameterMap& fixedValues)
 	{
 		return trueParameters.size() - fixedValues.size();
 	}
 
+	/*
 	MonteCarloEngine::UncertaintyMultipliers MonteCarloEngine::initializeUncertaintyMultipliers()
 	{
-		UncertaintyMultipliers multipliers;
-		std::vector<double> values;
-		utils::generateVectorAtGivenRanges(values, 1, 7, 1);
-		auto correlateNumberOfParametersWithMultiplier = [&](const std::vector<double> mult)
-			{
-				std::unordered_map<uint8_t, double> multipliers;
-				for (const auto& [parNumber, val] : std::views::zip(values, mult))
-					multipliers[parNumber] = val;
-				return multipliers;
-			};
-		std::vector<double> oneSigmaValues{ 1.00, 2.30, 3.53, 4.72, 5.89, 7.04 };
-		std::vector<double> twoSigmaValues{ 4.00, 6.17, 8.02, 9.70, 11.3, 12.8 };
-		std::vector<double> threeSigmaValues{ 9.00, 11.8, 14.2, 16.3, 18.2, 20.1 };
-		multipliers[oneSigma] = correlateNumberOfParametersWithMultiplier(oneSigmaValues);
-		// 90% 2.71 4.61 6.25 7.78 9.24 10.6
-		multipliers[twoSigma] = correlateNumberOfParametersWithMultiplier(twoSigmaValues);
-		// 99% 6.63 9.21 11.3 13.3 15.1 16.8
-		multipliers[threeSigma] = correlateNumberOfParametersWithMultiplier(threeSigmaValues);
-		// 99.99% 15.1 18.4 21.1 23.5 25.7 27.8
-		return multipliers;
+	m_uncertaintyMultipliers = {
+			{1.0, 4.0, 9.0},
+			{2.30, 6.18, 11.8},
+			{3.53, 8.02, 14.2},
+			{4.72, 9.72, 16.3},
+			{5.89, 11.3, 18.2},
+			{7.04, 12.8, 20.1}};
 	}
+	*/
 	double MonteCarloEngine::getUncertaintyMultiplier(uint8_t numberOfParameters, ConfidenceLevel level)
 	{
 		return m_uncertaintyMultipliers.at(level).at(numberOfParameters);

@@ -2,7 +2,7 @@
 #include "JFMFitter.hpp"
 #include "CalculateData.hpp"
 
-extern std::vector<std::pair<std::vector<double>, std::vector<double>>> globalErrors;
+extern  std::vector<std::pair<std::vector<double>, std::vector<double>>> globalErrors;
 
 
 namespace JFMService
