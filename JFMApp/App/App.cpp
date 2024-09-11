@@ -951,10 +951,12 @@ namespace JFMApp {
 
 						u.uncertainty.resize(3);
 						for (size_t i = 0; i < 3; i++) {
-							for (auto& [k, v] : mc.trueParameters) {
-								auto unc = m_numerics->GetUncertainty(out, i, k);
-								u.uncertainty[i][k] = unc;
-							}
+
+								auto unc = m_numerics->GetUncertainty(out, i, m_state.plotData.mcTempParams.first);
+								u.uncertainty[i][m_state.plotData.mcTempParams.first] = unc;
+								unc = m_numerics->GetUncertainty(out, i, m_state.plotData.mcTempParams.second);
+								u.uncertainty[i][m_state.plotData.mcTempParams.second] = unc;
+
 						}
 						toSave.push_back(u);
 

@@ -207,9 +207,13 @@ namespace JFMService
 			});
 
 		// Extract the max and min values
-		double maxValue = maxIt->foundParameters.at(id);
-		double minValue = minIt->foundParameters.at(id);
-		return { minValue, maxValue };
+		if(internalResult.size())
+		{
+			double maxValue = maxIt->foundParameters.at(id);
+			double minValue = minIt->foundParameters.at(id);
+			return { minValue, maxValue };
+		}
+		return{ -1,-1 };
 
 	};
 

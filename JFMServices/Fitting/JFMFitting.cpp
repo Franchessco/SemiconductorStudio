@@ -115,7 +115,7 @@ namespace JFMService::FittingService
 	{
 		m_monteCarlo.Simulate(input, callback);
 	}
-	std::pair<double,double> Fitting::GetUncertainty(const MCOutput &output, int level, ParameterID id)
+	std::pair<double, double> Fitting::GetUncertainty(const MCOutput &output, int level, ParameterID id)
 	{
 		return m_monteCarlo.GetUncertainty(output, level, id);
 	}
@@ -162,7 +162,8 @@ namespace JFMService::FittingService
 		file.close();
 		std::string command = "python ./generate_image.py " + path.string();
 		std::system(command.c_str());
-		std::cout << path.string();
+#if 0		
+		std::cout << path.string()
 		try {
 			// Attempt to remove the file
 			if (std::filesystem::remove(path)) {
@@ -182,34 +183,35 @@ namespace JFMService::FittingService
 				std::cerr << "Other path: " << e.path2() << '\n';
 			}
 		}
+#endif
 	}
-	void Fitting::SaveUncertanties(const std::vector<UncertaintySave>& toSave, const std::filesystem::path& path)
+	void Fitting::SaveUncertanties(const std::vector<UncertaintySave> &toSave, const std::filesystem::path &path)
 	{
 		std::stringstream sttringStream;
 		std::string xlabel = Fitters::parameterIdToString((Fitters::ParameterID)(*toSave.front().paramPair.begin()).first);
-		std::string ylabel = Fitters::parameterIdToString((Fitters::ParameterID)(*toSave.front().paramPair.end()).first);
-		sttringStream << "Name, Temperature, " << xlabel<<", "<<ylabel<<"66%, ,"<< "95%, ,"<<"99%\n" ;
-		auto SerializeUncertaintyType = [](const UncertaintySave& save) 
+		std::string ylabel = Fitters::parameterIdToString((Fitters::ParameterID)(*(--toSave.front().paramPair.end())).first);
+		sttringStream << "Name, Temperature, " << xlabel << ", " << ylabel << " ,66% , ," << "95%, ," << "99%" << std::endl;
+		auto SerializeUncertaintyType = [](const UncertaintySave &save)
+		{
+			auto ToScientific = [](double value)
 			{
-				auto ToScientific = [](double value)
-					{
-						std::ostringstream out;
-						out << std::scientific << std::setprecision(6) << value;
-						return out.str();
-					};
-				std::string string;
-				string += save.name + ", ";
-				for (const auto& [key, val] : save.paramPair)
-					string += ToScientific(val) + ", ";
-					
-				for (const auto& item : save.uncertainty)
-					string += ToScientific(item.begin()->second.first) + ", " + ToScientific(item.begin()->second.second)+',';
-				return string;
+				std::ostringstream out;
+				out << std::scientific << std::setprecision(6) << value;
+				return out.str();
 			};
-		for (const auto& item : toSave)
+			std::string string;
+			string += save.name + ", ";
+			for (const auto &[key, val] : save.paramPair)
+				string += ToScientific(val) + ", ";
+
+			for (const auto &item : save.uncertainty)
+				string += ToScientific(item.begin()->second.first) + ", " + ToScientific(item.begin()->second.second) + ',';
+			return string + "\n";
+		};
+		for (const auto &item : toSave)
 			sttringStream << SerializeUncertaintyType(item);
 
-		std::ofstream file(path/".csv");
+		std::ofstream file(path);
 		file << sttringStream.str();
 		file.close();
 	}
