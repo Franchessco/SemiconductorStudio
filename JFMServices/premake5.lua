@@ -21,10 +21,10 @@ project "JFMServices"
         "%{wks.location}/Vendor/yaml-cpp/include",
     }
 
-    targetdir ( "%{wks.location}/lib/" )
-    objdir ( "%{wks.location}/obj/%{cfg.buildcfg}" )
+    targetdir ( "%{wks.location}/lib/%{cfg.buildcfg}/" )
+    objdir ( "%{wks.location}/obj/%{cfg.buildcfg}/" )
 
-    libdirs ( "%{wks.location}/lib" )
+    libdirs ( "%{wks.location}/lib/%{cfg.buildcfg}/" )
 
     defines
     {

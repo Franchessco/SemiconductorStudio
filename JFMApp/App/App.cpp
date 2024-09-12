@@ -261,7 +261,7 @@ namespace JFMApp {
 				ch.T = data.m_genT;
 				ch.modelID = data.m_genModelID;
 				ch.savedModelID = data.m_genModelID;
-				ch.dataRange = { 0, ch.V.size() - 1 };
+				ch.dataRange = { 0, ch.V.size() - 2 };
 				ch.m_tuneCallback = [&]() {
 					ch.fittedParameters = ch.tunedParameters;
 					CalculatingData cData = ch.getCalculatingData();
@@ -279,6 +279,54 @@ namespace JFMApp {
 				m_numerics->CalculateData(cData);
 				ch.I = ch.fittedI;
 				ch.checked = true;
+				ch.useBounds = true;
+				ch.savedUseBounds = true;
+				ch.dataRange = { 0,ch.V.size() - 1 };
+				auto eParams = m_numerics->Estimate(ch.getEstimateInput());
+				ch.savedInitialGuess = eParams;
+				ch.savedUseInitial = true;
+				ch.savedUseInitial = true;
+				ch.fittedParameters = eParams;
+				for (const auto& [k, v] : eParams)
+				{
+					if (k != 0 && k != 4)
+					{
+						ch.savedBounds[k].first = 1.0 * std::pow(10.0, std::floor(std::log10(v)) - 1);
+						ch.savedBounds[k].second = 9.0 * std::pow(10.0, std::floor(std::log10(v)) + 1);
+					}
+					else if (k == 4) {
+						ch.savedBounds[k].first = 1;
+						ch.savedBounds[k].second = 5;
+					}
+					else
+					{
+						ch.savedBounds[k].first = 1;
+						ch.savedBounds[k].second = 5;
+					}
+				}
+				ch.savedUseBounds = true;
+				ch.useBounds = true;
+				m_numerics->Fit(ch.getFittingInput(), [&](ParameterMap&& output) {
+
+
+					CalculatingData cData = ch.getCalculatingData();
+					cData.parameters = output;
+
+					m_numerics->CalculateData(cData);
+
+					double fitError = m_numerics->CalculateError(cData.characteristic.currentData, ch.getEstimateInput().characteristic.currentData);
+					ch.submitFitting(output, fitError);
+					//std::scoped_lock lk{ m_charMutex };
+					ch.savedUseInitial = false;
+					ch.savedUseBounds = false;
+
+					ch.bounds = ch.savedBounds;
+
+					m_state.browserData.m_characteristics.push_back(ch);
+					m_state.plotData.active = &m_state.browserData.m_characteristics.back();
+					});
+
+
 				m_state.browserData.m_characteristics.push_back(ch);
 				m_state.plotData.active = &m_state.browserData.m_characteristics.back();
 				};
@@ -450,7 +498,7 @@ namespace JFMApp {
 					ch.T = pMap.second;
 					ch.modelID = data.m_genModelID;
 					ch.savedModelID = data.m_genModelID;
-					ch.dataRange = { 0, ch.V.size() - 1 };
+					ch.dataRange = { 0, ch.V.size() - 2 };
 					ch.m_tuneCallback = [&]() {
 						ch.fittedParameters = ch.tunedParameters;
 						CalculatingData cData = ch.getCalculatingData();
@@ -466,6 +514,49 @@ namespace JFMApp {
 					m_numerics->CalculateData(cData);
 					ch.I = ch.fittedI;
 					ch.checked = true;
+					ch.dataRange = { 0,ch.V.size() - 2 };
+					auto eParams = m_numerics->Estimate(ch.getEstimateInput());
+					ch.savedInitialGuess = eParams;
+					ch.savedUseInitial = true;
+					ch.fittedParameters = eParams;
+					for (const auto& [k, v] : eParams)
+					{
+						if (k != 0 && k != 4)
+						{
+							ch.savedBounds[k].first = 1.0 * std::pow(10.0, std::floor(std::log10(v)) - 1);
+							ch.savedBounds[k].second = 9.0 * std::pow(10.0, std::floor(std::log10(v)) + 1);
+						}
+						else if (k == 4) {
+							ch.savedBounds[k].first = 1;
+							ch.savedBounds[k].second = 5;
+						}
+						else
+						{
+							ch.savedBounds[k].first = 1;
+							ch.savedBounds[k].second = 5;
+						}
+					}
+					ch.savedUseBounds = true;
+					ch.useBounds = true;
+					m_numerics->Fit(ch.getFittingInput(), [&](ParameterMap&& output) {
+
+
+						CalculatingData cData = ch.getCalculatingData();
+						cData.parameters = output;
+
+						m_numerics->CalculateData(cData);
+
+						double fitError = m_numerics->CalculateError(cData.characteristic.currentData, ch.getEstimateInput().characteristic.currentData);
+						ch.submitFitting(output, fitError);
+						//std::scoped_lock lk{ m_charMutex };
+						ch.savedUseInitial = false;
+						ch.savedUseBounds = false;
+
+						ch.bounds = ch.savedBounds;
+
+						m_state.browserData.m_characteristics.push_back(ch);
+						m_state.plotData.active = &m_state.browserData.m_characteristics.back();
+						});
 					m_state.browserData.m_characteristics.push_back(ch);
 					m_state.plotData.active = &m_state.browserData.m_characteristics.back();
 				}
@@ -825,7 +916,25 @@ namespace JFMApp {
 				auto eParams = m_numerics->Estimate(active.getEstimateInput());
 
 				active.fittedParameters = eParams;
-
+				for (const auto& [k, v] : eParams)
+				{
+					if (k != 0 && k != 4)
+					{
+						active.savedBounds[k].first = 1.0 * std::pow(10.0, std::floor(std::log10(v)) - 1);
+						active.savedBounds[k].second = 9.0 * std::pow(10.0, std::floor(std::log10(v)) + 1);
+					}
+					else if (k == 4) {
+						active.savedBounds[k].first = 1;
+						active.savedBounds[k].second = 5;
+					}
+					else
+					{
+						active.savedBounds[k].first = 1;
+						active.savedBounds[k].second = 5;
+					}
+				}
+				active.savedUseBounds = true;
+				active.useBounds = true;
 				};
 
 			m_state.plotData.m_fitCallback = [&]() {
@@ -963,7 +1072,7 @@ namespace JFMApp {
 					}
 				}
 				auto& ch = m_state.browserData.m_characteristics[0];
-				std::string name = ch.name + ".csv";
+				std::string name = m_state.plotData.mcTempName + ".csv";
 				m_numerics->SaveUncertanties(toSave, ch.path.parent_path() / name);
 				//save the uncertainties
 

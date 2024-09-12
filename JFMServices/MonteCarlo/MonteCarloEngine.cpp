@@ -3,7 +3,7 @@
 #include "../Fitting/JFMFitter.hpp"
 #include "../Models/CalculateData.hpp"
 #include <compare>
-
+#define MULTITHREAD
 extern std::vector<std::pair<std::vector<double>, std::vector<double>>> globalNoisyI;
 std::mutex g_mutex;
 static int blockNumber = 0;
@@ -31,7 +31,7 @@ namespace JFMService
 			std::cout << "block:" << localNumeber << " idx: " << i << std::endl;
 		}
 	};
-#define MULTI_THREAD 1;
+
 	static std::mutex mutex;
 	static int num = 0;
 	void MonteCarloEngine::Simulate(const MCInput& input, std::function<void(MCOutput&&)> callback)
@@ -51,6 +51,7 @@ namespace JFMService
 				int numChunks = (input.iterations + chunkSize - 1) / chunkSize; // 25
 
 				std::vector<MCResult> finalResults(input.iterations);
+#ifdef MULTITHREAD
 				for (int chunk = 0; chunk < numChunks; ++chunk)
 				{
 					int startIdx = chunk * chunkSize;
@@ -68,7 +69,13 @@ namespace JFMService
 					auto localResults = futures[chunk].get(); // Wait for and retrieve local results
 					std::copy(localResults.begin(), localResults.end(), output.mcResult.begin() + (chunk * chunkSize));
 				}
-
+#endif
+#ifndef MULTITHREAD
+				for (int i=0;i<output.inputData.iterations;i++)
+				{
+					simulate(preFitter, fitter, output.inputData, finalResults, i);
+				}
+#endif
 				auto end = std::chrono::high_resolution_clock().now();
 				auto miliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 				auto perIteration = miliseconds / input.iterations;
@@ -135,8 +142,8 @@ namespace JFMService
 		globalNoisyI.push_back({ copiedCurrent, calculated });
 		g_mutex.unlock();
 		results[i] = result;
-		/*		num += 1;
-				std::cout << "iteration: " << num << std::endl;*/
+		num += 1;
+		std::cout << "iteration: " << i << std::endl;
 	}
 	void MonteCarloEngine::calculateFittingError(const MCInput& input, MCResult& result, std::vector<double>& calculated)
 	{

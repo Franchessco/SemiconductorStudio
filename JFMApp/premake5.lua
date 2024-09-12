@@ -25,10 +25,10 @@ project "JFMApp"
         "%{wks.location}/Vendor/imgui/examples/libs/glfw/include"
     }
 
-    targetdir ( "%{wks.location}/lib/" )
-    objdir ( "%{wks.location}/obj/%{cfg.buildcfg}" )
+    targetdir ( "%{wks.location}/lib/%{cfg.buildcfg}/" )
+    objdir ( "%{wks.location}/obj/%{cfg.buildcfg}/" )
 
-    libdirs ( "%{wks.location}/lib" )
+    libdirs ( "%{wks.location}/lib/%{cfg.buildcfg}/" )
 
     filter { "system:windows", "platforms:x86" }
         libdirs { "%{wks.location}/Vendor/imgui/examples/libs/glfw/lib-vc2010-32" }

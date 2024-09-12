@@ -24,7 +24,7 @@ namespace JFMApp::Views {
 			ImGui::TableNextColumn();
 			//Fixed parameters
 			{
-				
+
 
 
 				auto& params = nConf->modelParameters[ch.modelID];
@@ -48,7 +48,7 @@ namespace JFMApp::Views {
 					}
 				}
 
-				
+
 
 			}
 
@@ -86,7 +86,7 @@ namespace JFMApp::Views {
 					}
 				}
 
-				
+
 			}
 
 			ImGui::TableNextColumn();
@@ -194,7 +194,7 @@ namespace JFMApp::Views {
 				if (ImGui::BeginTable("Bounds", 3, tableFlags & ~ImGuiTableFlags_BordersInner)) {
 					ImGui::TableNextRow();
 					auto& params = nConf->modelParameters[ch.modelID];
-					
+
 					for (auto& id : params) {
 						auto& bounds = ch.bounds;
 						double& min = bounds[id].first;
@@ -215,7 +215,7 @@ namespace JFMApp::Views {
 						ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x);
 						if (ImGui::InputDouble(minName.c_str(), &min, 0.0, 0.0, "%e") && ImGui::IsItemDeactivatedAfterEdit())
 							min = std::clamp(min, nConf->paramBounds[id].first, max);
-						
+
 						ImGui::PopItemWidth();
 
 						if (col) {
@@ -228,7 +228,7 @@ namespace JFMApp::Views {
 							ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0, 0.0, 0.0, 1.0));
 							col = true;
 						}
-						
+
 						std::string maxName = "##max" + nConf->parameters[id];
 
 						ImGui::TableNextColumn();
@@ -246,10 +246,10 @@ namespace JFMApp::Views {
 
 					ImGui::EndTable();
 				}
-				
 
 
-				
+
+
 			}
 
 			ImGui::EndTable();
@@ -277,7 +277,7 @@ namespace JFMApp::Views {
 			//Fixed parameters
 			{
 
-				
+
 
 
 				int columns = std::max(3, (int)data.globalFixedParameterIDs.size());
@@ -303,7 +303,7 @@ namespace JFMApp::Views {
 					ImGui::EndTable();
 				}
 
-				
+
 
 			}
 
@@ -326,7 +326,7 @@ namespace JFMApp::Views {
 
 					ImGui::EndCombo();
 				}
-				
+
 
 				if (col) {
 					ImGui::PopStyleColor();
@@ -413,10 +413,16 @@ namespace JFMApp::Views {
 		}
 		else {
 
-
+			int id = 0;
 			for (auto& ch : *(data.characteristics)) {
+
+				ImGui::PushID(id++);
 				if (ch.checked && ImGui::CollapsingHeader(ch.name.c_str()))
+				{
+
 					drawCharacteristicConfig(ch, data.paramConfig);
+				}
+				ImGui::PopID();
 			}
 
 

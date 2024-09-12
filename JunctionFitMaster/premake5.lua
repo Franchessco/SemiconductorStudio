@@ -35,10 +35,10 @@ project "JunctionFitMaster"
              "YAML_CPP_STATIC_DEFINE"
     }
 
-    targetdir("%{wks.location}/bin/")
-    objdir("%{wks.location}/obj/%{cfg.buildcfg}")
+    targetdir("%{wks.location}/bin/%{cfg.buildcfg}/")
+    objdir("%{wks.location}/obj/%{cfg.buildcfg}/")
 
-    libdirs("%{wks.location}/lib")
+    libdirs("%{wks.location}/lib/%{cfg.buildcfg}/")
 
     filter { "configurations:Debug" }
         defines { "DEBUG" }

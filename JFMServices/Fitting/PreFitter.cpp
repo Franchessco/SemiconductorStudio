@@ -173,8 +173,11 @@ namespace JFMService
 			{ return lhs.first < rhs; }));
 		auto interpolate = [&](int index)
 			{
+				if (index == m_AMultiplier.size() - 1)
+					index-=1;
 				auto& [dvStart, start] = m_AMultiplier[index];
 				auto& [dvEnd, end] = m_AMultiplier[index + 1];
+
 				double slope = (end - start) / (dvEnd - dvStart);
 				double shift = end - slope * dvEnd;
 				return  slope * dV + shift;
