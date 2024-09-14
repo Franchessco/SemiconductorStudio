@@ -139,7 +139,7 @@ namespace JFMService
 			fitter->Fit(copied.startingData, callback);
 			calculateFittingError(input, result, calculated);
 
-		} while ( result.error > 23.5 or outOfBounds(result.foundParameters, input.startingData.bounds)); // and any of the parameters is negative
+		} while ( 0 and result.error > 23.5 or outOfBounds(result.foundParameters, input.startingData.bounds)); // and any of the parameters is negative
 		g_mutex.lock();
 
 		globalNoisyI.push_back({ copiedCurrent, calculated });

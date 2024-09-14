@@ -82,7 +82,7 @@ namespace JFMService::Fitters
 															   { return value < 0; });
 			bool bigError = result.getError() > 1 or result.getError()<0;
 			bool iterationCondition = fittingIterationRuns < 5;
-			return false;
+			//return false;
 			return (negativeValueParameters or bigError) and iterationCondition;
 		};
 		//! this can be rebuild and templated via model and number of parameters
@@ -113,13 +113,13 @@ namespace JFMService::Fitters
 			};
 		do
 		{
-			if (false)//fittingIterationRuns > 1)
+			if (fittingIterationRuns > 1)
 			{
 				recalculateBounds(setUp, initialPoint);
 				recalculateInitialPoint(initialPoint);
 			}
 			results = fit<FourParameterModel, 4>(setUp, initialPoint, NSDdata, additionalParameters);
-			//initialPoint = results.getParameters();
+			initialPoint = results.getParameters();
 			if (additionalParameters.fixingConfiguration)
 				transferFixingConfiguration(input.fixConfig);
 			fittingIterationRuns += 1;
