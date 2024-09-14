@@ -74,6 +74,7 @@ namespace JFMService
 				for (int i=0;i<output.inputData.iterations;i++)
 				{
 					simulate(preFitter, fitter, output.inputData, finalResults, i);
+					output.mcResult = finalResults;
 				}
 #endif
 				auto end = std::chrono::high_resolution_clock().now();
@@ -97,7 +98,9 @@ namespace JFMService
 		// std::uniform_real_distribution<double> distribution{ -1,1 };
 		std::normal_distribution<double> distribution{ 0, 1 };
 		// std::cout << distribution(m_generator)*sigma << std::endl;
+		//std::cout << value << " ";
 		value += distribution(m_generator) * noise;
+		//std::cout << value << std::endl;
 		// value = value +  distribution(m_generator)*(factor / 100) * value ;
 		// value = std::abs(value);
 	}
@@ -136,7 +139,7 @@ namespace JFMService
 			fitter->Fit(copied.startingData, callback);
 			calculateFittingError(input, result, calculated);
 
-		} while (result.error > 23.5 or outOfBounds(result.foundParameters, input.startingData.bounds)); // and any of the parameters is negative
+		} while ( result.error > 23.5 or outOfBounds(result.foundParameters, input.startingData.bounds)); // and any of the parameters is negative
 		g_mutex.lock();
 
 		globalNoisyI.push_back({ copiedCurrent, calculated });

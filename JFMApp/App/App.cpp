@@ -142,10 +142,10 @@ namespace JFMApp {
 
 				ImPlot::SetupAxisScale(ImAxis_Y1, Data::Characteristic::TFL, Data::Characteristic::TFNL);
 
-				if (m_state.browserData.m_characteristics.size() > 1 && globalNoisyI.size())
+				if (m_state.browserData.m_characteristics.size() >= 1 && globalNoisyI.size())
 				{
-					ImPlot::PlotLine("I", m_state.browserData.m_characteristics[1].V.data() + m_state.browserData.m_characteristics[1].dataRange.first, globalNoisyI[curr_c].first.data(), globalNoisyI[curr_c].first.size());
-					ImPlot::PlotLine("I1", m_state.browserData.m_characteristics[1].V.data() + m_state.browserData.m_characteristics[1].dataRange.first, globalNoisyI[curr_c].second.data(), globalNoisyI[curr_c].second.size());
+					ImPlot::PlotLine("I", m_state.browserData.m_characteristics[0].V.data() + m_state.browserData.m_characteristics[0].dataRange.first, globalNoisyI[curr_c].first.data(), globalNoisyI[curr_c].first.size());
+					ImPlot::PlotLine("I1", m_state.browserData.m_characteristics[0].V.data() + m_state.browserData.m_characteristics[0].dataRange.first, globalNoisyI[curr_c].second.data(), globalNoisyI[curr_c].second.size());
 				}
 			}
 			ImPlot::EndPlot();
