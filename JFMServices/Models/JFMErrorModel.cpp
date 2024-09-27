@@ -11,7 +11,7 @@ namespace JFMService
     {
         double error{0.0};
         for (const auto& [orig, check] : std::views::zip(original[1], checked[1]))
-            error += std::pow((std::log(orig) - std::log(check)), 2) ;
+            error += std::pow((1-std::log(check)/std::log(orig)), 2);
         return error;
 
         //for (const auto &[orig, check] : std::views::zip(original[1], checked[1]))

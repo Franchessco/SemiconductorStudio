@@ -139,7 +139,7 @@ namespace JFMService
 			fitter->Fit(copied.startingData, callback);
 			calculateFittingError(input, result, calculated);
 
-		} while ( 0 and result.error > 23.5 or outOfBounds(result.foundParameters, input.startingData.bounds)); // and any of the parameters is negative
+		} while (0 and (result.error > 23.5 or outOfBounds(result.foundParameters, input.startingData.bounds))); // and any of the parameters is negative
 		g_mutex.lock();
 
 		globalNoisyI.push_back({ copiedCurrent, calculated });
@@ -150,11 +150,6 @@ namespace JFMService
 	}
 	void MonteCarloEngine::calculateFittingError(const MCInput& input, MCResult& result, std::vector<double>& calculated)
 	{
-		auto IerrorModel = [&](double trueI, double fittedI, double noise)
-			{
-				double sigma = fittedI * noise;
-				return std::pow(((fittedI - trueI) / sigma), 2);
-			};
 		CalculatingData data;
 		DataCalculator dataCalculator;
 
@@ -181,8 +176,26 @@ namespace JFMService
 		std::span<double> fittedCurrent = data.characteristic.currentData;
 		double accumulatedError = 0.0;
 		double noise = input.noise / 100.0;
+		int dataSize = trueCurrent.size();
+		
+		auto calculateSigma = [&](const std::vector<double>& noisedI, const std::span<double>& trueI)
+		{
+			double sigma = 0.0;
+			for (const auto&[tI,nI]:std::views::zip(trueI,noisedI))
+				sigma += (tI - nI) / dataSize;
+			return sigma;
+			
+		};
+
+		double sigma = calculateSigma(copiedCurrent,trueData.characteristic.currentData);
+
+		double firstError = input.firstFitError;
+		auto IerrorModel = [&](double trueI, double fittedI)
+			{
+				return std::pow(((fittedI - trueI) / sigma), 2)  ;
+			};
 		for (const auto& [trueI, fitI] : std::views::zip(trueCurrent, fittedCurrent))
-			accumulatedError += IerrorModel(trueI, fitI, noise);
+			accumulatedError += IerrorModel(trueI, fitI) - firstError;
 
 		result.error = accumulatedError;
 	}

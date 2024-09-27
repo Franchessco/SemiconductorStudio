@@ -74,6 +74,7 @@ namespace JFMService::FittingService
 		size_t iterations{};
 		double noise{1.0};
 		std::pair<double, double> characteristicBounds;
+		double firstFitError;
 	};
 
 	struct MCResult

@@ -107,7 +107,10 @@ namespace JFMApp::Views {
 					
 
 					ImGui::TableNextColumn();
-					ImGui::Text(ch.fitError > -1.0 ? std::to_string(ch.fitError).c_str() : "-");
+					std::ostringstream out;
+					out << std::scientific << std::setprecision(10) << ch.fitError;
+					auto s = out.str();
+					ImGui::Text(s.c_str() );
 
 					ImGui::TableNextColumn();
 					ImGui::Text(std::to_string(ch.T).c_str());

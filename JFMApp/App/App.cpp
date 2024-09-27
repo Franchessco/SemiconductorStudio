@@ -445,7 +445,8 @@ namespace JFMApp {
 
 				std::vector<std::pair<ParameterMap, double>> pMaps{};
 
-				size_t numOfCombinations = std::accumulate(params.begin(), params.end(), 1, [](size_t acc, const auto& p) { return acc * p.second.size(); });
+				size_t numOfCombinations = std::accumulate(params.begin(), params.end(), 1, [](size_t acc, const auto& p) 
+					{ return acc * p.second.size(); });
 
 				numOfCombinations *= T.size();
 
