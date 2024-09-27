@@ -499,7 +499,7 @@ namespace JFMApp {
 					ch.T = pMap.second;
 					ch.modelID = data.m_genModelID;
 					ch.savedModelID = data.m_genModelID;
-					ch.dataRange = { 0, ch.V.size() - 2 };
+					ch.dataRange = { 0, ch.V.size() - 1  };
 					ch.m_tuneCallback = [&]() {
 						ch.fittedParameters = ch.tunedParameters;
 						CalculatingData cData = ch.getCalculatingData();
@@ -515,7 +515,7 @@ namespace JFMApp {
 					m_numerics->CalculateData(cData);
 					ch.I = ch.fittedI;
 					ch.checked = true;
-					ch.dataRange = { 0,ch.V.size() - 2 };
+					ch.dataRange = { 0,ch.V.size() - 1 };
 					auto eParams = m_numerics->Estimate(ch.getEstimateInput());
 					ch.savedInitialGuess = eParams;
 					ch.savedUseInitial = true;
