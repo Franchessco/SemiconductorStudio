@@ -69,7 +69,7 @@ namespace JFMApp::Views {
 
 			int param_size = 4 + (nConf ? nConf->parameters.size() : 0);
 
-			ImGuiTableFlags flags = ImGuiTableFlags_BordersOuter | ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingStretchProp;
+			ImGuiTableFlags flags = ImGuiTableFlags_BordersOuter | ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingStretchSame;
 			ImVec2 size = ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y);
 
 			if (ImGui::BeginTable("Characteristics", param_size, flags, size)) {

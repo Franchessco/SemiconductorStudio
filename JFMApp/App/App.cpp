@@ -278,10 +278,20 @@ namespace JFMApp {
 				auto cData = ch.getCalculatingData();
 				m_numerics->CalculateData(cData);
 				ch.I = ch.fittedI;
+
+				static std::mt19937 rand_generator{ std::random_device{}() };
+				std::normal_distribution<double> distribution{ 0, 1 };
+
+				for (auto& i : ch.I) {
+					double noise = (i * data.m_noise / 100.0);
+
+					i += distribution(rand_generator) * noise;
+				}
+
 				ch.checked = true;
 				ch.useBounds = true;
 				ch.savedUseBounds = true;
-				ch.dataRange = { 0,ch.V.size() - 1 };
+				ch.dataRange = { 0,ch.I.size() - 1 };
 				auto eParams = m_numerics->Estimate(ch.getEstimateInput());
 				ch.savedInitialGuess = eParams;
 				ch.savedUseInitial = true;
@@ -374,6 +384,20 @@ namespace JFMApp {
 					}
 				}
 
+				std::vector<double> noise{};
+
+				if (data.m_noiseN == 1)
+					noise.push_back(data.m_noise / 100.0);
+				else {
+					noise.resize(data.m_noiseN);
+					double v = data.m_noiseRange[0] / 100.0;
+					double step = (data.m_noiseRange[1] / 100.0 - data.m_noiseRange[0] / 100.0) / (data.m_noiseN - 1);
+					for (auto& val : noise) {
+						val = v;
+						v += step;
+					}
+				}
+
 
 				if (V.size() == 0) return;
 
@@ -388,10 +412,10 @@ namespace JFMApp {
 						double step = (end - start) / (N - 1);
 						double d_step = 10.0 / N;
 
-						unsigned int start_pow = std::floor(std::log10(start));
-						unsigned int end_pow = std::floor(std::log10(end));
+						int start_pow = std::floor(std::log10(start));
+						int end_pow = std::floor(std::log10(end));
 
-						double log_step = (end_pow - start_pow) / (N - 1);
+						double log_step = double(end_pow - start_pow) / double(N - 1);
 
 						switch (type) {
 						case Data::BrowserData::GenType::Linear:
@@ -403,20 +427,22 @@ namespace JFMApp {
 						case Data::BrowserData::GenType::Log:
 							for (int i = 0; i < N; ++i) {
 								double log_value = start_pow + i * log_step;
-								vals.push_back(std::pow(10, log_value));
+								vals[i] = std::pow(10, log_value);
 							}
 							break;
 						case Data::BrowserData::GenType::Exponential:
 							for (int i = 0; i < N; ++i) {
 								double exponent_value = start + i * step;
-								vals.push_back(std::exp(exponent_value));
+								vals[i] = std::exp(exponent_value);
 							}
 							break;
 						case Data::BrowserData::GenType::PerDecade:
-							for (unsigned int i = start_pow; i <= end_pow; i++)
+							vals.resize(N * (end_pow - start_pow + 1));
+							for (int i = start_pow; i <= end_pow; i++)
 							{
+								size_t p = 0;
 								for (double j = 1.0; j < 10.0; j += d_step)
-									vals.push_back(j * std::pow(10, i));
+									vals[(i - start_pow) * N + p++] = j * std::pow(10, i);
 							}
 							break;
 
@@ -444,11 +470,13 @@ namespace JFMApp {
 				}
 
 				std::vector<std::pair<ParameterMap, double>> pMaps{};
+				std::vector<double> noises{};
 
 				size_t numOfCombinations = std::accumulate(params.begin(), params.end(), 1, [](size_t acc, const auto& p) 
 					{ return acc * p.second.size(); });
 
 				numOfCombinations *= T.size();
+				numOfCombinations *= noise.size();
 
 				std::unordered_map<ParameterID, size_t> indices{};
 
@@ -462,24 +490,35 @@ namespace JFMApp {
 
 				ParameterID tempID = (*(--indices.end())).first;
 
+				indices[(*(--indices.end())).first + 1] = 0;
+
+				ParameterID noiseID = (*(--indices.end())).first;
+
 				pMaps.resize(numOfCombinations);
+				noises.resize(numOfCombinations);
 
 
 				for (size_t i = 0; i < numOfCombinations; i++) {
 					std::pair<ParameterMap, double> pMap{};
 					for (auto& [id, s] : indices)
-						pMap.first[id == tempID ? id - 1 : id] = 0.0;
+						if (id != noiseID) pMap.first[id == tempID ? id - 1 : id] = 0.0;
 
 					for (auto& [id, val] : pMap.first)
 						val = params[id][indices[id]];
 
+
+
 					pMap.second = T[indices[tempID]];
+					if (data.m_noiseN > 0)
+						noises[i] = noise[indices[noiseID]];
 
 					for (auto& [p, i] : indices) {
 						i++;
-						if (p != tempID && i >= params[p].size())
+						if (p == tempID && i >= T.size())
 							i = 0;
-						else if (p == tempID && i >= T.size())
+						else if (p == noiseID && i >= noise.size())
+							i = 0;
+						else if (i >= params[p].size() && p < tempID)
 							i = 0;
 						else
 							break;
@@ -489,12 +528,13 @@ namespace JFMApp {
 					pMaps[i] = pMap;
 				}
 
-
+				static std::mt19937 rand_generator{ std::random_device{}() };
 			
-				for (auto& pMap : pMaps) {
+				for (const auto& [pMap, ns] : std::views::zip(pMaps, noises)) {
 					Data::Characteristic ch{};
 					ch.V = V;
 					ch.I.resize(V.size());
+					ch.dataRange = { 0,ch.I.size() - 1 };
 					ch.name = "Generated";
 					ch.T = pMap.second;
 					ch.modelID = data.m_genModelID;
@@ -514,8 +554,18 @@ namespace JFMApp {
 					auto cData = ch.getCalculatingData();
 					m_numerics->CalculateData(cData);
 					ch.I = ch.fittedI;
+
+					std::normal_distribution<double> distribution{ 0, 1 };
+
+					if (data.m_noiseN > 0)
+						for (auto& i : ch.I) {
+							double noise = (i * ns);
+
+							i += distribution(rand_generator) * noise;
+						}
+
 					ch.checked = true;
-					ch.dataRange = { 0,ch.V.size() - 1 };
+					ch.dataRange = { 0,ch.I.size() - 1 };
 					auto eParams = m_numerics->Estimate(ch.getEstimateInput());
 					ch.savedInitialGuess = eParams;
 					ch.savedUseInitial = true;

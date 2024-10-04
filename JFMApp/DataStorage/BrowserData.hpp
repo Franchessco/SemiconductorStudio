@@ -26,20 +26,32 @@ namespace JFMApp::Data
 		std::vector<bool> m_selection{};
 
 		//generation data
-		ModelID m_genModelID{};
-		std::array<float, 2> m_voltageGenRange{};
+		ModelID m_genModelID{3};
+		std::array<float, 2> m_voltageGenRange{0.01f, 1.5f};
 		std::array<float, 2> m_tempRange{};
 		size_t m_tempN{1};
 		float m_voltageGenStep{};
 		bool m_byStepN{true};
-		size_t m_nSteps{};
+		size_t m_nSteps{300};
 		float m_genT{ 100.0 };
 		enum GenType { Linear = 0, Log, Exponential, PerDecade };
 		std::array<std::string, 4> m_genTypes{ "Linear", "Log", "Exponential", "Per Decade" };
 
+		size_t m_noiseN{ 1 };
+		double m_noise{ 0.0 };
+		std::array<float, 2> m_noiseRange{ 0.0, 0.0 };
 
 		struct GenData
 		{
+			GenData(double singleVal) : singleValue{ singleVal } {}
+
+			GenData() = default;
+			GenData(const GenData&) = default;
+			GenData(GenData&&) = default;
+			GenData& operator=(const GenData&) = default;
+			GenData& operator=(GenData&&) = default;
+			~GenData() = default;
+
 			double start{};
 			double end{};
 			double step{};
@@ -49,7 +61,7 @@ namespace JFMApp::Data
 			bool singleShot{};
 		};
 
-		std::unordered_map<ParameterID, GenData> m_paramGenData{};
+		std::unordered_map<ParameterID, GenData> m_paramGenData{ {0, 2.2}, {1, 1e-13}, {2, 5e-5}, {3, 100.0f} };
 
 		std::function<void()> m_singleShot{};
 		std::function<void()> m_generateCallback{};

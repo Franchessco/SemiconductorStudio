@@ -29,13 +29,28 @@ namespace JFMApp::Views {
 		if (ImGui::InputFloat("Temperature", &data.m_genT, 0.1, 1.0, "%.1f") && ImGui::IsItemDeactivatedAfterEdit())
 			data.m_genT = std::clamp(data.m_genT, 0.0f, 500.0f);
 
+		ImGui::SameLine(0.0f, 20.0f);
+		float n = data.m_noise;
+		if (ImGui::InputFloat("Noise", &n, 0.1, 1.0, "%.1f") && ImGui::IsItemDeactivatedAfterEdit())
+			data.m_noise = std::clamp(n, 0.0f, 100.0f);
+
 		if (ImGui::DragFloat2("Temperature Range", data.m_tempRange.data(), 1.0f, 0.001f, 10.0f) && ImGui::IsItemDeactivatedAfterEdit()) {
 			data.m_tempRange[0] = std::clamp(data.m_tempRange[0], 1.0f, data.m_tempRange[1]);
 			data.m_tempRange[1] = std::clamp(data.m_tempRange[1], data.m_tempRange[0], 500.0f);
 		}
 		ImGui::SameLine(0.0f, 20.0f);
 		if (ImGui::InputScalar("T number", ImGuiDataType_U32, &data.m_tempN, nullptr, nullptr, "%d", ImGuiInputTextFlags_CharsDecimal) && ImGui::IsItemDeactivatedAfterEdit())
-			data.m_tempN = std::clamp(data.m_tempN, (size_t)5, (size_t)1000);
+			data.m_tempN = std::clamp(data.m_tempN, (size_t)1, (size_t)1000);
+
+
+
+		if (ImGui::DragFloat2("Noise Range", data.m_noiseRange.data(), 1.0f, 0.001f, 10.0f) && ImGui::IsItemDeactivatedAfterEdit()) {
+			data.m_noiseRange[0] = std::clamp(data.m_noiseRange[0], 0.0f, data.m_noiseRange[1]);
+			data.m_noiseRange[1] = std::clamp(data.m_noiseRange[1], data.m_noiseRange[0], 100.0f);
+		}
+		ImGui::SameLine(0.0f, 20.0f);
+		if (ImGui::InputScalar("Noise number", ImGuiDataType_U32, &data.m_noiseN, nullptr, nullptr, "%d", ImGuiInputTextFlags_CharsDecimal) && ImGui::IsItemDeactivatedAfterEdit())
+			data.m_noiseN = std::clamp(data.m_noiseN, (size_t)1, (size_t)1000);
 
 		if (ImGui::DragFloat2("Voltage Range", data.m_voltageGenRange.data(), 1.0f, 0.001f, 10.0f) && ImGui::IsItemDeactivatedAfterEdit()) {
 			data.m_voltageGenRange[0] = std::clamp(data.m_voltageGenRange[0], 0.001f, data.m_voltageGenRange[1]);

@@ -24,8 +24,8 @@ namespace JFMApp::Data
 	{
 		EstimateInput input{};
 
-		std::span<double> eV{V.begin() + dataRange.first, V.begin() + dataRange.second + 1};
-		std::span<double> eI{I.begin() + dataRange.first, I.begin() + dataRange.second + 1};
+		std::span<double> eV{V.begin() + dataRange.first, V.begin() + dataRange.second};
+		std::span<double> eI{I.begin() + dataRange.first, I.begin() + dataRange.second};
 
 		// FIX this in the future - abstract parameters in the loading service
 		input.additionalParameters[6] = T;

@@ -133,7 +133,7 @@ namespace JFMApp::Views {
 							//ranged characteristics
 							if (data.plotRanged) {
 								ImPlot::SetNextLineStyle(data.colorRanged);
-								ImPlot::PlotLine(act.name.c_str(), act.V.data() + act.dataRange.first, act.I.data() + act.dataRange.first, act.dataRange.second - act.dataRange.first + 1);
+								ImPlot::PlotLine(act.name.c_str(), act.V.data() + act.dataRange.first, act.I.data() + act.dataRange.first, std::min(act.dataRange.second - act.dataRange.first, act.I.size()));
 							}
 
 							//fitted characteristics
@@ -167,7 +167,7 @@ namespace JFMApp::Views {
 								//ranged characteristics
 								if (data.plotRanged) {
 									ImPlot::SetNextLineStyle(data.colorRanged);
-									ImPlot::PlotLine(ch.name.c_str(), ch.V.data() + ch.dataRange.first, ch.I.data() + ch.dataRange.first, ch.dataRange.second - ch.dataRange.first + 1);
+									ImPlot::PlotLine(ch.name.c_str(), ch.V.data() + ch.dataRange.first, ch.I.data() + ch.dataRange.first, std::min(ch.dataRange.second - ch.dataRange.first, ch.I.size()));
 								}
 
 								//fitted characteristics
