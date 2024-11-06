@@ -182,7 +182,7 @@ namespace JFMService
 		{
 			double sigma = 0.0;
 			for (const auto&[tI,nI]:std::views::zip(trueI,noisedI))
-				sigma += (tI - nI) / dataSize;
+				sigma += std::pow(std::abs((std::log(tI) - std::log(nI))),2)/ dataSize;
 			return sigma;
 			
 		};
@@ -192,12 +192,19 @@ namespace JFMService
 		double firstError = input.firstFitError;
 		auto IerrorModel = [&](double trueI, double fittedI)
 			{
-				return std::pow(((fittedI - trueI) / sigma), 2)  ;
+			/*
+				std::cout << "log(I1), log(I2): " << std::log(fittedI) << " " << std::log(trueI) << std::endl;
+				std::cout << "log(I1) - log(2): " << std::log(fittedI) - std::log(trueI) << std::endl;
+				std::cout << "(log(I1) - log(2))/sqrt(sigma): " << (std::log(fittedI) - std::log(trueI))/std::sqrt(sigma) << std::endl;
+				std::cout << "full; " << std::pow(((std::log(fittedI) - std::log(trueI)) / std::sqrt(sigma)), 2) << std::endl;
+			*/
+				return std::pow(((std::log(fittedI) - std::log(trueI)) / (/*std::log(trueI) * */noise)), 2);
 			};
-		for (const auto& [trueI, fitI] : std::views::zip(trueCurrent, fittedCurrent))
-			accumulatedError += IerrorModel(trueI, fitI) - firstError;
+		for (const auto& [trueI, fitI] : std::views::zip(trueData.characteristic.currentData, fittedCurrent))
+			//+for (const auto& [trueI, fitI] : std::views::zip(trueData.characteristic.currentData, fittedCurrent))
+				accumulatedError += IerrorModel(trueI, fitI);///dataSize;// - firstError;
 
-		result.error = accumulatedError;
+		result.error = (accumulatedError ) ;
 	}
 
 	std::pair<double, double> MonteCarloEngine::GetUncertainty(const MCOutput& output, int level, ParameterID id)
